@@ -19,6 +19,14 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasRoles;
 
     /**
+     * Get the products created by this user.
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'created_by');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
