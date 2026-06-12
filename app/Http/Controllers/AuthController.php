@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
 class AuthController extends Controller
@@ -14,7 +13,7 @@ class AuthController extends Controller
         return Inertia::render('auth/login');
     }
 
-    public function signin()
+    public function signup()
     {
         return Inertia::render('auth/register');
     }
@@ -41,7 +40,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users', 'confirmed'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 

@@ -4,5 +4,22 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-Route::get('/login', [\App\Http\Controllers\AuthController::class, 'login'])->name('login');
-Route::post('/login', [\App\Http\Controllers\AuthController::class, 'authenticate'])->name('authenticate');
+Route::group([
+    'prefix' => 'auth',
+    'as' => 'auth.',
+], function () {
+    Route::group([
+        'middleware' => ['guest'],
+    ], function () {
+        Route::get('/login', [\App\Http\Controllers\AuthController::class, 'login'])->name('login');
+        Route::post('/login', [\App\Http\Controllers\AuthController::class, 'authenticate'])->name('authenticate');
+        Route::get('/register', [\App\Http\Controllers\AuthController::class, 'signup'])->name('signup');
+        Route::post('/register', [\App\Http\Controllers\AuthController::class, 'register'])->name('register');
+    });
+
+    Route::group([
+        'middleware' => ['auth'],
+    ], function () {
+        Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+    });
+});
