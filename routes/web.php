@@ -1,12 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::group([
     'prefix' => 'auth',
-    'as' => 'auth.',
 ], function () {
     Route::group([
         'middleware' => ['guest'],
@@ -22,4 +22,13 @@ Route::group([
     ], function () {
         Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
     });
+});
+
+Route::group([
+    'prefix' => 'dashboard',
+    'middleware' => ['auth'],
+], function () {
+    Route::get('/', function () {
+        return Inertia::render('dashboard/index');
+    })->name('index');
 });

@@ -44,7 +44,7 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = \App\Models\User::create($request->safe()->only(['name', 'email', 'password']));
+        $user = \App\Models\User::create($request->only(['name', 'email', 'password']));
 
         if (Auth::login($user)) {
             return redirect()->intended('/');
