@@ -3,7 +3,9 @@ export default function AppLayout({
 } : {
     children: React.ReactNode
 }) {
-    <>
-        {children}
-    </>
+    return (
+        <div className="flex min-h-screen w-full flex-col">
+            {children}
+        </div>
+    );
 }
