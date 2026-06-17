@@ -13,7 +13,18 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $data = Product::all();
+        $validated = request()->validate([
+            'q' => ['string', 'nullable'],
+        ]);
+
+        $query = Product::query();
+
+        $query->when($validated['q'] ?? null, function ($query, $q) {
+            $query->where('name', 'like', "%{$q}%")
+                ->orWhere('description', 'like', "%{$q}%");
+        });
+
+        $data = $query->paginate(10);
 
         return Inertia::render('dashboard/products', [
             'products' => $data

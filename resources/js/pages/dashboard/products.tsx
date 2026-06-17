@@ -1,6 +1,6 @@
-import type { Product } from '@/types';
+import type { PaginatedProduct } from '@/types';
 
-export default function Products({ products }: { products: Product[] }) {
+export default function Products({ products }: { products: PaginatedProduct }) {
     return (
         <div className="p-4">
             <h1 className="mb-4 text-2xl font-bold">Products</h1>
@@ -10,9 +10,9 @@ export default function Products({ products }: { products: Product[] }) {
             </p>
 
             <div className="flex items-start justify-start gap-4">
-                {products.length > 0 ? (
+                {products.data.length > 0 ? (
                     <ul className="space-y-4">
-                        {products.map((product) => (
+                        {products.data.map((product) => (
                             <li
                                 key={product.id}
                                 className="rounded border p-4 shadow-sm"
@@ -24,7 +24,7 @@ export default function Products({ products }: { products: Product[] }) {
                                     {product.description}
                                 </p>
                                 <p className="mt-2 font-bold">
-                                    ${product.price.toFixed(2)}
+                                    {product.price.toFixed(2)}
                                 </p>
                             </li>
                         ))}
