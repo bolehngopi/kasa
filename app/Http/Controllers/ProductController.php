@@ -26,7 +26,7 @@ class ProductController extends Controller
 
         $data = $query->paginate(10);
 
-        return Inertia::render('dashboard/products', [
+        return Inertia::render('dashboard/products/index', [
             'products' => $data
         ]);
     }
@@ -52,7 +52,9 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        return Inertia::render('dashboard/products/show', [
+            'product' => $product->load('category', 'variants'),
+        ]);
     }
 
     /**

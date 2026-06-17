@@ -1,3 +1,5 @@
+import { Link } from '@inertiajs/react';
+import { show } from '@/routes/products';
 import type { PaginatedProduct } from '@/types';
 
 export default function Products({ products }: { products: PaginatedProduct }) {
@@ -18,7 +20,9 @@ export default function Products({ products }: { products: PaginatedProduct }) {
                                 className="rounded border p-4 shadow-sm"
                             >
                                 <h2 className="text-lg font-semibold">
-                                    {product.name}
+                                    <Link href={show(product.id)}>
+                                        {product.name}
+                                    </Link>
                                 </h2>
                                 <p className="text-gray-600">
                                     {product.description}
