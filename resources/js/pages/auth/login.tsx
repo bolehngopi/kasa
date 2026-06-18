@@ -11,7 +11,7 @@ export default function Login() {
         password_confirmation: '',
     });
 
-    const submit = (e: React.FormEvent) => {
+    const submit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         post(authenticate.url());
     };

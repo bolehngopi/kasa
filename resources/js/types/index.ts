@@ -13,12 +13,20 @@ export interface Category {
     updated_at: string;
 }
 
-export interface PaginatedProduct {
-    data: Product[];
+export interface Paginated {
+    data: any[];
     current_page: number;
     last_page: number;
     per_page: number;
     total: number;
+}
+
+export interface PaginatedCategory extends Paginated {
+    data: Category[];
+}
+
+export interface PaginatedProduct extends Paginated {
+    data: Product[];
 }
 
 export interface Product {
