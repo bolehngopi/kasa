@@ -18,6 +18,7 @@ class ProductController extends Controller
         $search = request()->query('search');
         $perPage = request()->query('per_page', 10);
         $page = request()->query('page', 1);
+        $cat = request()->query('category');
 
         $query = Product::query();
 
@@ -28,10 +29,17 @@ class ProductController extends Controller
             });
         });
 
+        $query->when($cat, function ($query, $cat) {
+            $query->where('category_id', $cat);
+        });
+
         $data = $query->paginate($perPage, ['*'], 'page', $page);
 
+        $categories = \App\Models\Category::all();
+
         return Inertia::render('dashboard/products/index', [
-            'products' => $data
+            'products' => $data,
+            'categories' => $categories
         ]);
     }
 
@@ -62,7 +70,12 @@ class ProductController extends Controller
             'stock' => ['required', 'integer', 'min:0'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'variants' => ['nullable', 'array'],
-            'variants.*.id' => ['nullable', 'exists:product_variants,id'],
+            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
+            'variants.*.sku' => ['required_with:variants', 'string', 'max:255', 'unique:product_variants,sku'],
+            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
+            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
+            'variants.*.is_active' => ['required_with:variants', 'boolean'],
+            'variants.*.sort_order' => ['required_with:variants', 'integer', 'min:0'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -122,6 +135,12 @@ class ProductController extends Controller
             'category_id' => ['exists:categories,id'],
             'variants' => ['array'],
             'variants.*.id' => ['nullable', 'exists:product_variants,id'],
+            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
+            'variants.*.sku' => ['required_with:variants', 'string', 'max:255', 'unique:product_variants,sku,' . ($request->input('variants.*.id') ?? 'NULL')],
+            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
+            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
+            'variants.*.is_active' => ['required_with:variants', 'boolean'],
+            'variants.*.sort_order' => ['required_with:variants', 'integer', 'min:0'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -146,20 +165,11 @@ class ProductController extends Controller
         // Update variants if provided
         if (isset($validated['variants'])) {
             foreach ($validated['variants'] as $variantData) {
-                if (isset($variantData['id'])) {
-                    // Update existing variant
-                    $variant = $product->variants()->find($variantData['id']);
-                    if ($variant) {
-                        $variant->update($variantData);
-                    }
-                } else {
-                    // Create new variant
-                    $product->variants()->create($variantData);
-                }
+                $product->variants()->updateOrCreate(['id' => $variantData['id'] ?? null], $variantData);
             }
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product updated successfully.');
+        return redirect()->route('products.show', $product)->with('success', 'Product ' . $product->name . ' updated successfully.');
     }
 
     /**
