@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -25,6 +26,7 @@ class PermissionSeeder extends Seeder
         $owner->givePermissionTo('manage users');
         $owner->givePermissionTo('manage roles');
         $owner->givePermissionTo('manage permissions');
+        $owner->givePermissionTo('manage products');
 
         // staff
         Permission::create(['name' => 'manage products']);
@@ -45,7 +47,7 @@ class PermissionSeeder extends Seeder
         // super-admin
         $superAdmin = Role::create(['name' => 'super-admin']);
 
-        $user = \App\Models\User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Super Admin',
             'email' => 'superadmin@example.com',
         ]);

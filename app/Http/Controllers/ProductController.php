@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use App\Models\Category;
 use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -35,11 +37,11 @@ class ProductController extends Controller
 
         $data = $query->paginate($perPage, ['*'], 'page', $page);
 
-        $categories = \App\Models\Category::all();
+        $categories = Category::all();
 
         return Inertia::render('dashboard/products/index', [
             'products' => $data,
-            'categories' => $categories
+            'categories' => $categories,
         ]);
     }
 
@@ -48,48 +50,32 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = \App\Models\Category::all();
+        $categories = Category::all();
 
         return Inertia::render('dashboard/products/create', [
-            'categories' => $categories
+            'categories' => $categories,
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validated = $request->validate([
-            'image' => ['nullable', 'image', 'max:2048'],
-            'name' => ['required', 'string', 'max:255'],
-            'sku' => ['required', 'string', 'max:255', 'unique:products,sku'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['nullable', 'boolean'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'variants' => ['nullable', 'array'],
-            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.sku' => ['required_with:variants', 'string', 'max:255', 'unique:product_variants,sku'],
-            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
-            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
-            'variants.*.is_active' => ['required_with:variants', 'boolean'],
-            'variants.*.sort_order' => ['required_with:variants', 'integer', 'min:0'],
-        ]);
+        $validated = $request->safe();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
+                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
-            $validated['image_url'] = $path;
+            $validated->merge(['image_url' => $path]);
         }
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        $product = auth()->user()->products()->create($validated);
+        $product = auth()->user()->products()->create($validated->except('variants'));
 
         // Create variants if provided
         if (isset($validated['variants'])) {
@@ -122,26 +108,9 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $validated = $request->validate([
-            'image' => ['image', 'max:2048'],
-            'name' => ['string', 'max:255'],
-            'sku' => ['string', 'max:255', 'unique:products,sku,' . $product->id],
-            'description' => ['string'],
-            'is_active' => ['boolean'],
-            'price' => ['numeric', 'min:0'],
-            'stock' => ['integer', 'min:0'],
-            'category_id' => ['exists:categories,id'],
-            'variants' => ['array'],
-            'variants.*.id' => ['nullable', 'exists:product_variants,id'],
-            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.sku' => ['required_with:variants', 'string', 'max:255', 'unique:product_variants,sku,' . ($request->input('variants.*.id') ?? 'NULL')],
-            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
-            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
-            'variants.*.is_active' => ['required_with:variants', 'boolean'],
-            'variants.*.sort_order' => ['required_with:variants', 'integer', 'min:0'],
-        ]);
+        $validated = $request->safe();
 
         if ($request->hasFile('image')) {
             // Delete old image if exists
@@ -152,24 +121,22 @@ class ProductController extends Controller
 
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
+                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
-            $validated['image_url'] = $path;
+            $validated->merge(['image_url' => $path]);
         }
-
-        $validated['slug'] = Str::slug($validated['name']);
 
         $product->update($validated);
 
         // Update variants if provided
-        if (isset($validated['variants'])) {
-            foreach ($validated['variants'] as $variantData) {
+        if (isset($request['variants'])) {
+            foreach ($request['variants'] as $variantData) {
                 $product->variants()->updateOrCreate(['id' => $variantData['id'] ?? null], $variantData);
             }
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product ' . $product->name . ' updated successfully.');
+        return redirect()->route('products.show', $product)->with('success', 'Product '.$product->name.' updated successfully.');
     }
 
     /**
