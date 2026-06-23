@@ -25,6 +25,6 @@ class ProductModifierGroup extends Model
 
     public function modifiers()
     {
-        return $this->hasManyThrough(Modifiers::class, ModifierGroup::class, 'id', 'modifier_group_id', 'modifier_group_id', 'id');
+        return $this->hasManyThrough(Modifier::class, ModifierGroup::class, 'id', 'modifier_group_id', 'modifier_group_id', 'id');
     }
 }

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ModifierGroup;
-use App\Models\Modifiers;
+use App\Models\Modifier;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
@@ -19,7 +19,7 @@ class ProductSeeder extends Seeder
             ->has(
                 ModifierGroup::factory()
                     ->count(2)
-                    ->has(Modifiers::factory()->count(3))
+                    ->has(Modifier::factory()->count(3))
             )
             ->create();
     }

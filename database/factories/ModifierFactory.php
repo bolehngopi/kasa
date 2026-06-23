@@ -3,13 +3,13 @@
 namespace Database\Factories;
 
 use App\Models\ModifierGroup;
-use App\Models\Modifiers;
+use App\Models\Modifier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Modifiers>
+ * @extends Factory<Modifier>
  */
-class ModifiersFactory extends Factory
+class ModifierFactory extends Factory
 {
     /**
      * Define the model's default state.

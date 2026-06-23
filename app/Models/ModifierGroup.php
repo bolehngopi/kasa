@@ -15,7 +15,7 @@ class ModifierGroup extends Model
 
     public function modifiers()
     {
-        return $this->hasMany(Modifiers::class);
+        return $this->hasMany(Modifier::class);
     }
 
     public function products()
