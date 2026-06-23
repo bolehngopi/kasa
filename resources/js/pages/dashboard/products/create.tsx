@@ -12,19 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { store } from '@/routes/products';
-import type { Category } from '@/types';
+import type { Category, ProductVariant } from '@/types';
 
-type ProductVariantForm = {
-    name: string;
-    sku: string;
-    price: number;
-    stock: number;
-    is_active: boolean;
-    is_default: boolean;
-    sort_order: number;
-};
-
-const buildVariant = (sortOrder: number): ProductVariantForm => ({
+const buildVariant = (sortOrder: number): ProductVariant => ({
     name: '',
     sku: '',
     price: 0,
@@ -34,9 +24,7 @@ const buildVariant = (sortOrder: number): ProductVariantForm => ({
     sort_order: sortOrder,
 });
 
-const normalizeVariants = (
-    variants: ProductVariantForm[],
-): ProductVariantForm[] =>
+const normalizeVariants = (variants: ProductVariant[]): ProductVariant[] =>
     variants.map((variant, index) => ({
         ...variant,
         sort_order: index,
@@ -60,10 +48,10 @@ export default function CreateProduct({
         variants: [buildVariant(0)],
     });
 
-    const updateVariant = <K extends keyof ProductVariantForm>(
+    const updateVariant = <K extends keyof ProductVariant>(
         index: number,
         field: K,
-        value: ProductVariantForm[K],
+        value: ProductVariant[K],
     ) => {
         const nextVariants = data.variants.map((variant, variantIndex) =>
             variantIndex === index ? { ...variant, [field]: value } : variant,
@@ -196,7 +184,10 @@ export default function CreateProduct({
                             >
                                 <option value="">Select a category</option>
                                 {categories.map((category) => (
-                                    <option key={category.id} value={category.id}>
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
                                         {category.name}
                                     </option>
                                 ))}
@@ -278,7 +269,12 @@ export default function CreateProduct({
                                 name="image"
                                 onChange={(
                                     e: React.ChangeEvent<HTMLInputElement>,
-                                ) => setData('image', e.target.files?.[0] || null)}
+                                ) =>
+                                    setData(
+                                        'image',
+                                        e.target.files?.[0] || null,
+                                    )
+                                }
                             />
                             {errors.image && (
                                 <p className="text-sm text-destructive">
@@ -311,11 +307,16 @@ export default function CreateProduct({
                             <div>
                                 <CardTitle>Variants</CardTitle>
                                 <CardDescription>
-                                    Sort order follows the order of the rows in this list.
+                                    Sort order follows the order of the rows in
+                                    this list.
                                 </CardDescription>
                             </div>
 
-                            <Button type="button" variant="outline" onClick={addVariant}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={addVariant}
+                            >
                                 Add variant
                             </Button>
                         </div>
@@ -346,7 +347,9 @@ export default function CreateProduct({
 
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor={`variant-${index}-name`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-name`}
+                                            >
                                                 Name
                                             </Label>
                                             <Input
@@ -361,15 +364,23 @@ export default function CreateProduct({
                                                     )
                                                 }
                                             />
-                                            {errors[`variants.${index}.name`] && (
+                                            {errors[
+                                                `variants.${index}.name`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.name`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.name`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor={`variant-${index}-sku`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-sku`}
+                                            >
                                                 SKU
                                             </Label>
                                             <Input
@@ -384,15 +395,23 @@ export default function CreateProduct({
                                                     )
                                                 }
                                             />
-                                            {errors[`variants.${index}.sku`] && (
+                                            {errors[
+                                                `variants.${index}.sku`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.sku`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.sku`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor={`variant-${index}-price`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-price`}
+                                            >
                                                 Price
                                             </Label>
                                             <Input
@@ -405,19 +424,29 @@ export default function CreateProduct({
                                                     updateVariant(
                                                         index,
                                                         'price',
-                                                        parseFloat(e.target.value) || 0,
+                                                        parseFloat(
+                                                            e.target.value,
+                                                        ) || 0,
                                                     )
                                                 }
                                             />
-                                            {errors[`variants.${index}.price`] && (
+                                            {errors[
+                                                `variants.${index}.price`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.price`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.price`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor={`variant-${index}-stock`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-stock`}
+                                            >
                                                 Stock
                                             </Label>
                                             <Input
@@ -429,13 +458,22 @@ export default function CreateProduct({
                                                     updateVariant(
                                                         index,
                                                         'stock',
-                                                        parseInt(e.target.value, 10) || 0,
+                                                        parseInt(
+                                                            e.target.value,
+                                                            10,
+                                                        ) || 0,
                                                     )
                                                 }
                                             />
-                                            {errors[`variants.${index}.stock`] && (
+                                            {errors[
+                                                `variants.${index}.stock`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.stock`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.stock`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>
@@ -452,12 +490,20 @@ export default function CreateProduct({
                                                     )
                                                 }
                                             />
-                                            <Label htmlFor={`variant-${index}-is_active`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-is_active`}
+                                            >
                                                 Active
                                             </Label>
-                                            {errors[`variants.${index}.is_active`] && (
+                                            {errors[
+                                                `variants.${index}.is_active`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.is_active`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.is_active`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>
@@ -474,12 +520,20 @@ export default function CreateProduct({
                                                     )
                                                 }
                                             />
-                                            <Label htmlFor={`variant-${index}-is_default`}>
+                                            <Label
+                                                htmlFor={`variant-${index}-is_default`}
+                                            >
                                                 Default variant
                                             </Label>
-                                            {errors[`variants.${index}.is_default`] && (
+                                            {errors[
+                                                `variants.${index}.is_default`
+                                            ] && (
                                                 <p className="text-sm text-destructive">
-                                                    {errors[`variants.${index}.is_default`]}
+                                                    {
+                                                        errors[
+                                                            `variants.${index}.is_default`
+                                                        ]
+                                                    }
                                                 </p>
                                             )}
                                         </div>

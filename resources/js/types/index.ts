@@ -45,15 +45,16 @@ export interface Product {
 }
 
 export interface ProductVariant {
-    id: number;
+    id?: number;
     product_id?: number;
     product?: Product;
     name: string;
     sku: string;
     price: number;
     stock: number;
+    sort_order: number;
     is_active: boolean;
     is_default: boolean;
-    created_at: string;
-    updated_at: string;
+    created_at?: string;
+    updated_at?: string;
 }
