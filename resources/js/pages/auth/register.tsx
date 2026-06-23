@@ -89,7 +89,7 @@ export default function Register() {
                                 id="password"
                                 name="password"
                                 type="password"
-                                autoComplete="current-password"
+                                autoComplete="new-password"
                                 placeholder="Enter your password"
                                 value={data.password}
                                 onChange={(e) =>
@@ -115,7 +115,7 @@ export default function Register() {
                                 id="password-confirmation"
                                 name="password_confirmation"
                                 type="password"
-                                autoComplete="current-password"
+                                autoComplete="new-password"
                                 placeholder="Confirm your password"
                                 value={data.password_confirmation}
                                 onChange={(e) =>

@@ -9,8 +9,8 @@ export interface Category {
     parent?: Category;
     children?: Category[];
     products?: Product[];
-    created_at: string;
-    updated_at: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface Paginated {
@@ -37,11 +37,13 @@ export interface Product {
     description: string;
     price: number;
     stock: number;
+    is_active: boolean;
     category_id?: number;
     category?: Category;
     variants?: ProductVariant[];
-    created_at: string;
-    updated_at: string;
+    modifier_groups?: ModifierGroup[];
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface ProductVariant {
@@ -54,6 +56,28 @@ export interface ProductVariant {
     stock: number;
     is_active: boolean;
     is_default: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ModifierGroup {
+    id: number;
+    name: string;
+    description: string;
+    is_active: boolean;
+    products?: Product[];
+    modifiers?: Modifier[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Modifier {
+    id?: number;
+    modifier_group_id?: number;
+    modifierGroup?: ModifierGroup;
+    name: string;
+    price: number;
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }

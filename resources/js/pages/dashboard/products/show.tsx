@@ -37,6 +37,51 @@ export default function ProductDetail({ product }: { product: Product }) {
                         </ul>
                     </div>
                 )}
+
+                {product.modifier_groups &&
+                    product.modifier_groups.length > 0 && (
+                        <div className="mt-4">
+                            <h2 className="mb-2 text-lg font-semibold">
+                                Modifier Groups
+                            </h2>
+                            <ul className="space-y-2">
+                                {product.modifier_groups.map((group) => (
+                                    <li
+                                        key={group.id}
+                                        className="rounded border p-4 shadow-sm"
+                                    >
+                                        <h3 className="text-md font-semibold">
+                                            {group.name}
+                                        </h3>
+                                        <p className="text-gray-600">
+                                            {group.description}
+                                        </p>
+                                        {group.modifiers &&
+                                            group.modifiers.length > 0 && (
+                                                <ul className="mt-2 space-y-1">
+                                                    {group.modifiers.map(
+                                                        (modifier) => (
+                                                            <li
+                                                                key={
+                                                                    modifier.id
+                                                                }
+                                                                className="text-gray-600"
+                                                            >
+                                                                {modifier.name}{' '}
+                                                                - $
+                                                                {modifier.price.toFixed(
+                                                                    2,
+                                                                )}
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
             </div>
         </>
     );
