@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -67,7 +68,7 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
+                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
                 'public'
             );
             $validated->merge(['image_url' => $path]);
@@ -75,12 +76,26 @@ class ProductController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        $product = auth()->user()->products()->create($validated->except('variants'));
+        $product = Auth::user()->products()->create($validated->except('variants', 'modifier_groups'));
 
         // Create variants if provided
         if (isset($validated['variants'])) {
             foreach ($validated['variants'] as $variantData) {
                 $product->variants()->create($variantData);
+            }
+        }
+
+        // Create modifier groups and modifiers if provided
+        if (isset($validated['modifier_groups'])) {
+            foreach ($validated['modifier_groups'] as $groupData) {
+                $modifiers = $groupData['modifiers'] ?? [];
+                unset($groupData['modifiers']);
+                $modifierGroup = $product->modifierGroups()->create($groupData);
+
+                // Create modifiers for the group
+                foreach ($modifiers as $modifierData) {
+                    $modifierGroup->modifiers()->create($modifierData);
+                }
             }
         }
 
@@ -93,16 +108,8 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return Inertia::render('dashboard/products/show', [
-            'product' => $product->load('category', 'variants'),
+            'product' => $product->load('category', 'variants', 'modifierGroups', 'creator', 'modifierGroups.modifiers'),
         ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Product $product)
-    {
-        //
     }
 
     /**
@@ -121,7 +128,7 @@ class ProductController extends Controller
 
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
+                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
                 'public'
             );
             $validated->merge(['image_url' => $path]);
@@ -136,7 +143,21 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product '.$product->name.' updated successfully.');
+        // Update modifier groups and modifiers if provided
+        if (isset($request['modifier_groups'])) {
+            foreach ($request['modifier_groups'] as $groupData) {
+                $modifiers = $groupData['modifiers'] ?? [];
+                unset($groupData['modifiers']);
+                $modifierGroup = $product->modifierGroups()->updateOrCreate(['id' => $groupData['id'] ?? null], $groupData);
+
+                // Update modifiers for the group
+                foreach ($modifiers as $modifierData) {
+                    $modifierGroup->modifiers()->updateOrCreate(['id' => $modifierData['id'] ?? null], $modifierData);
+                }
+            }
+        }
+
+        return redirect()->route('products.show', $product)->with('success', 'Product ' . $product->name . ' updated successfully.');
     }
 
     /**
