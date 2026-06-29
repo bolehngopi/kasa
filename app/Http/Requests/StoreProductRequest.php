@@ -56,6 +56,7 @@ class StoreProductRequest extends FormRequest
             'modifier_groups.*.modifiers.*.price' => ['required_with:modifier_groups.*.modifiers', 'numeric', 'min:0'],
             'modifier_groups.*.modifiers.*.is_active' => ['required_with:modifier_groups.*.modifiers', 'boolean'],
             'modifier_groups.*.modifiers.*.sort_order' => ['required_with:modifier_groups.*.modifiers', 'integer', 'min:0'],
+            'modifier_groups.*.modifiers.*.sku' => ['required_with:modifier_groups.*.modifiers', 'string', 'max:255', 'unique:modifiers,sku'],
         ];
     }
 

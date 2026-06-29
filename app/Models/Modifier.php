@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['modifier_group_id', 'name', 'price', 'sort_order', 'is_default'])]
+#[Fillable(['modifier_group_id', 'name', 'price', 'sort_order', 'is_default', 'sku'])]
 class Modifier extends Model
 {
     /** @use HasFactory<ModifierFactory> */
