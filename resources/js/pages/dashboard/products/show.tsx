@@ -17,27 +17,6 @@ export default function ProductDetail({ product }: { product: Product }) {
                         Category: {product.category.name}
                     </p>
                 )}
-                {product.variants && product.variants.length > 0 && (
-                    <div className="mt-4">
-                        <h2 className="mb-2 text-lg font-semibold">Variants</h2>
-                        <ul className="space-y-2">
-                            {product.variants.map((variant) => (
-                                <li
-                                    key={variant.id}
-                                    className="rounded border p-4 shadow-sm"
-                                >
-                                    <h3 className="text-md font-semibold">
-                                        {variant.name}
-                                    </h3>
-                                    <p className="text-gray-600">
-                                        SKU: {variant.sku}
-                                    </p>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
                 {product.modifier_groups &&
                     product.modifier_groups.length > 0 && (
                         <div className="mt-4">

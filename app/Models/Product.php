@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,14 +26,6 @@ class Product extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Get the variants for this product.
-     */
-    public function variants()
-    {
-        return $this->hasMany(ProductVariants::class);
     }
 
     /**

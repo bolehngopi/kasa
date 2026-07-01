@@ -68,7 +68,7 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
+                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
             $validated->merge(['image_url' => $path]);
@@ -76,14 +76,7 @@ class ProductController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        $product = Auth::user()->products()->create($validated->except('variants', 'modifier_groups'));
-
-        // Create variants if provided
-        if (isset($validated['variants'])) {
-            foreach ($validated['variants'] as $variantData) {
-                $product->variants()->create($variantData);
-            }
-        }
+        $product = Auth::user()->products()->create($validated->except('modifier_groups'));
 
         // Create modifier groups and modifiers if provided
         if (isset($validated['modifier_groups'])) {
@@ -108,7 +101,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return Inertia::render('dashboard/products/show', [
-            'product' => $product->load('category', 'variants', 'modifierGroups', 'creator', 'modifierGroups.modifiers'),
+            'product' => $product->load('category', 'modifierGroups', 'creator', 'modifierGroups.modifiers'),
         ]);
     }
 
@@ -128,20 +121,13 @@ class ProductController extends Controller
 
             $path = $request->file('image')->storeAs(
                 'products',
-                uniqid() . '.' . $request->file('image')->getClientOriginalExtension(),
+                uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
             $validated->merge(['image_url' => $path]);
         }
 
         $product->update($validated);
-
-        // Update variants if provided
-        if (isset($request['variants'])) {
-            foreach ($request['variants'] as $variantData) {
-                $product->variants()->updateOrCreate(['id' => $variantData['id'] ?? null], $variantData);
-            }
-        }
 
         // Update modifier groups and modifiers if provided
         if (isset($request['modifier_groups'])) {
@@ -157,7 +143,7 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'Product ' . $product->name . ' updated successfully.');
+        return redirect()->route('products.show', $product)->with('success', 'Product '.$product->name.' updated successfully.');
     }
 
     /**
@@ -166,11 +152,11 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         // Delete image if exists
-        if ($product->image_url) {
-            Storage::disk('public')->delete($product->image_url);
+        if (! empty($product->image_url)) {
+            Storage::disk('public')->delete([$product->image_url]);
         }
 
-        $product->delete();
+        Product::destroy($product->id);
 
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }

@@ -40,24 +40,9 @@ export interface Product {
     is_active: boolean;
     category_id?: number;
     category?: Category;
-    variants?: ProductVariant[];
     modifier_groups?: ModifierGroup[];
     created_at?: string;
     updated_at?: string;
-}
-
-export interface ProductVariant {
-    id: number;
-    product_id?: number;
-    product?: Product;
-    name: string;
-    sku: string;
-    price: number;
-    stock: number;
-    is_active: boolean;
-    is_default: boolean;
-    created_at: string;
-    updated_at: string;
 }
 
 export interface ModifierGroup {

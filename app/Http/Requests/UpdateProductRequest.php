@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 
@@ -19,29 +18,20 @@ class UpdateProductRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
             'image' => ['nullable', 'image', 'max:2048'],
             'name' => ['string', 'max:255'],
-            'slug' => ['string', 'max:255', 'unique:products,slug,' . $this->id],
-            'sku' => ['string', 'max:255', 'unique:products,sku,' . $this->id],
+            'slug' => ['string', 'max:255', 'unique:products,slug,'.$this->id],
+            'sku' => ['string', 'max:255', 'unique:products,sku,'.$this->id],
             'description' => ['string'],
             'is_active' => ['boolean'],
             'price' => ['numeric', 'min:0'],
             'stock' => ['integer', 'min:0'],
             'category_id' => ['nullable', 'exists:categories,id'],
-
-            'variants' => ['array', 'nullable'],
-            'variants.*.id' => ['nullable', 'exists:product_variants,id'],
-            'variants.*.name' => ['nullable', 'string', 'max:255'],
-            'variants.*.sku' => ['nullable', 'string', 'max:255', 'unique:product_variants,sku,' . ($this->input('variants.*.id') ?? 'NULL')],
-            'variants.*.price' => ['nullable', 'numeric', 'min:0'],
-            'variants.*.stock' => ['nullable', 'integer', 'min:0'],
-            'variants.*.is_active' => ['nullable', 'boolean'],
-            'variants.*.sort_order' => ['nullable', 'integer', 'min:0'],
 
             'modifier_groups' => ['nullable', 'array'],
             'modifier_groups.*.id' => ['nullable', 'exists:modifier_groups,id'],
@@ -60,7 +50,7 @@ class UpdateProductRequest extends FormRequest
             'modifier_groups.*.modifiers.*.price' => ['nullable', 'numeric', 'min:0'],
             'modifier_groups.*.modifiers.*.is_active' => ['nullable', 'boolean'],
             'modifier_groups.*.modifiers.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'modifier_groups.*.modifiers.*.sku' => ['nullable', 'string', 'max:255', 'unique:modifiers,sku,' . ($this->input('modifier_groups.*.modifiers.*.id') ?? 'NULL')],
+            'modifier_groups.*.modifiers.*.sku' => ['nullable', 'string', 'max:255', 'unique:modifiers,sku,'.($this->input('modifier_groups.*.modifiers.*.id') ?? 'NULL')],
         ];
     }
 

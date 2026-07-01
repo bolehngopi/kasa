@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreProductRequest extends FormRequest
 {
@@ -18,7 +18,7 @@ class StoreProductRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
@@ -32,14 +32,6 @@ class StoreProductRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'category_id' => ['nullable', 'exists:categories,id'],
-
-            'variants' => ['nullable', 'array'],
-            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.sku' => ['required_with:variants', 'string', 'max:255', 'unique:product_variants,sku'],
-            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
-            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
-            'variants.*.is_active' => ['required_with:variants', 'boolean'],
-            'variants.*.sort_order' => ['required_with:variants', 'integer', 'min:0'],
 
             'modifier_groups' => ['nullable', 'array'],
             'modifier_groups.*.name' => ['required_with:modifier_groups', 'string', 'max:255'],
@@ -65,6 +57,6 @@ class StoreProductRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge(['slug' => \Illuminate\Support\Str::slug($this->slug)]);
+        $this->merge(['slug' => Str::slug($this->slug)]);
     }
 }
