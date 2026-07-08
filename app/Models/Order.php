@@ -33,7 +33,7 @@ class Order extends Model
      */
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'order_product')
+        return $this->belongsToMany(OrderProduct::class, 'order_product')
             ->withPivot('quantity', 'price')
             ->withTimestamps();
     }
@@ -43,7 +43,7 @@ class Order extends Model
      */
     public function productModifiers()
     {
-        return $this->belongsToMany(Modifier::class, 'order_product_modifier')
+        return $this->belongsToMany(OrderProductModifier::class, 'order_product_modifier')
             ->withPivot('quantity', 'price')
             ->withTimestamps();
     }
