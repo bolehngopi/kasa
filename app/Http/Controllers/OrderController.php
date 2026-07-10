@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Http\Requests\StoreOrderRequest;
+use App\Models\Modifier;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -29,7 +32,53 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request)
     {
-        //
+        $validatedData = $request->validated();
+
+        $order = Order::create([
+            'user_id' => $validatedData['user_id'],
+            'status' => OrderStatus::PENDING,
+            'total_amount' => 0,
+            'notes' => $validatedData['notes'] ?? null,
+        ]);
+
+        $totalAmount = 0;
+
+        foreach ($validatedData['products'] as $items) {
+            $product = Product::findOrFail($items['product_id']);
+            $productTotal = $product->price;
+
+            $orderProduct = $order->products()->create([
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'image_url' => $product->image_url,
+                'price' => $product->price,
+                'quantity' => $items['quantity'],
+                'note' => $items['note'] ?? null,
+            ]);
+
+            if (!empty($items['modifiers'])) {
+                foreach ($items['modifiers'] as $modifierData) {
+                    $modifiers = Modifier::findOrFail($modifierData['modifier_id']);
+
+                    $productTotal += $modifiers->price;
+
+                    $orderProduct->orderModifiers()->create([
+                        'modifier_id' => $modifiers->id,
+                        'name' => $modifiers->name,
+                        'price' => $modifiers->price,
+                        'sku' => $modifiers->sku,
+                    ]);
+                }
+            }
+
+            $totalAmount += ($productTotal * $items['quantity']);
+        }
+
+        // Update the total amount of the order
+        $order->update(['total_amount' => $totalAmount]);
+
+        return response()->json(['message' => 'Order created successfully', 'order' => $order], 201);
     }
 
     /**

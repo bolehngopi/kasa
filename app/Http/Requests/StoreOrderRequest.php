@@ -29,11 +29,9 @@ class StoreOrderRequest extends FormRequest
             'order_products' => ['required', 'array'],
             'order_products.*.product_id' => ['required', 'exists:products,id'],
             'order_products.*.quantity' => ['required', 'integer', 'min:1'],
-            'order_products.*.price' => ['required', 'numeric', 'min:0'],
+            'order_products.*.note' => ['nullable', 'string', 'max:255'],
             'order_products.*.modifiers' => ['nullable', 'array'],
             'order_products.*.modifiers.*.modifier_id' => ['nullable', 'exists:modifiers,id'],
-            'order_products.*.modifiers.*.name' => ['nullable', 'string', 'max:255'],
-            'order_products.*.modifiers.*.price' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }
