@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku');
             $table->string('image_url')->nullable();
-            $table->text('note')->nullable();
+            $table->text('notes')->nullable();
             $table->unsignedInteger('quantity')->default(1);
             $table->decimal('price', 10, 2)->default(0);
             $table->timestamps();

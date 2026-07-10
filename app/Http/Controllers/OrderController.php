@@ -54,7 +54,7 @@ class OrderController extends Controller
                 'image_url' => $product->image_url,
                 'price' => $product->price,
                 'quantity' => $items['quantity'],
-                'note' => $items['note'] ?? null,
+                'notes' => $items['note'] ?? null,
             ]);
 
             if (!empty($items['modifiers'])) {
@@ -78,7 +78,7 @@ class OrderController extends Controller
         // Update the total amount of the order
         $order->update(['total_amount' => $totalAmount]);
 
-        return response()->json(['message' => 'Order created successfully', 'order' => $order], 201);
+        return response()->json(['message' => 'Order created successfully', 'order' => $order->load('products.orderModifiers')], 201);
     }
 
     /**

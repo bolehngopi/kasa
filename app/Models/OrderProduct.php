@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-#[Fillable(['order_id', 'product_id', 'name', 'sku', 'image_url', 'quantity', 'price', 'note'])]
+#[Fillable(['order_id', 'product_id', 'name', 'sku', 'image_url', 'quantity', 'price', 'notes'])]
 class OrderProduct extends Pivot
 {
     public $incrementing = true;
