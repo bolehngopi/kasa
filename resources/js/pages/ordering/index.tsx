@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { ordering } from '@/routes';
+import { useCart } from '@/store/cart-store';
 import type { Category, PaginatedProduct } from '@/types';
 
 export default function Ordering({
@@ -9,6 +10,8 @@ export default function Ordering({
     products: PaginatedProduct;
     categories: Category[];
 }) {
+    const { items: cartItems, add: addToCart } = useCart();
+
     const handleCategoryClick = (categoryId: number) => {
         router.get(
             ordering.url(),
@@ -23,6 +26,17 @@ export default function Ordering({
             {},
             { preserveState: true, preserveScroll: true, only: ['products'] },
         );
+    };
+
+    const handleAddToCart = (product: PaginatedProduct['data'][number]) => {
+        const cartItem = {
+            product_id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            modifiers: [],
+        };
+        addToCart(cartItem);
     };
 
     return (
@@ -76,7 +90,10 @@ export default function Ordering({
                                         {product.price}
                                     </p>
                                 </div>
-                                <button className="m-2 cursor-pointer rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
+                                <button
+                                    onClick={() => handleAddToCart(product)}
+                                    className="m-2 cursor-pointer rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+                                >
                                     Add to Order
                                 </button>
                             </div>
