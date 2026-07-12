@@ -17,7 +17,12 @@ class OrderController extends Controller
      */
     public function index()
     {
-        //
+        return inertia('dashboard/order/index', [
+            'orders' => Order::with(['staff', 'customer', 'products.modifiers'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(10)
+                ->withQueryString(),
+        ]);
     }
 
     /**

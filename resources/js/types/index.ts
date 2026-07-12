@@ -29,6 +29,10 @@ export interface PaginatedProduct extends Paginated {
     data: Product[];
 }
 
+export interface PaginatedOrder extends Paginated {
+    data: Order[];
+}
+
 export interface Product {
     id: number;
     image_url?: string;
