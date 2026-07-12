@@ -32,3 +32,5 @@ Route::group([
     Route::resource('/products', \App\Http\Controllers\ProductController::class);
     Route::resource('/orders', \App\Http\Controllers\OrderController::class);
 });
+
+Route::get('/ordering', \App\Http\Controllers\OrderingController::class)->name('ordering');
