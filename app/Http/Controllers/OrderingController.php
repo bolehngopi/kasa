@@ -11,10 +11,12 @@ class OrderingController extends Controller
      */
     public function __invoke(Request $request)
     {
+        $selectedCat = (array) $request->input('category_id', []);
+
         $product = \App\Models\Product::query();
 
-        $product->when($request->input('category_id'), function ($query, $categoryId) {
-            $query->where('category_id', $categoryId);
+        $product->when(!empty($selectedCat), function ($query) use ($selectedCat) {
+            $query->whereIn('category_id', $selectedCat);
         });
 
         return inertia('ordering/index', [

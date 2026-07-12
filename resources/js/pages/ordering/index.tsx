@@ -3,13 +3,12 @@ import { ordering } from '@/routes';
 import { useCart } from '@/store/cart-store';
 import type { Category, PaginatedProduct } from '@/types';
 
-export default function Ordering({
-    products,
-    categories,
-}: {
+interface OrderingProps {
     products: PaginatedProduct;
     categories: Category[];
-}) {
+}
+
+export default function Ordering({ products, categories }: OrderingProps) {
     const { items: cartItems, add: addToCart } = useCart();
 
     const handleCategoryClick = (categoryId: number) => {
@@ -43,7 +42,7 @@ export default function Ordering({
         <>
             <Head title="Ordering" />
             <div className="flex flex-col gap-4 p-2">
-                <h1 className="text-2xl font-bold">Ordering</h1>
+                {/* <h1 className="text-2xl font-bold">Ordering</h1> */}
                 <div className="flex flex-col gap-4">
                     <div className="flex scrollbar-thin gap-2 overflow-x-auto">
                         <button
