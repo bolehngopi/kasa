@@ -23,9 +23,9 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'staff_id' => ['required', 'exists:users,id'],
+            'customer_id' => ['nullable', 'exists:users,id'],
             'notes' => ['nullable', 'string', 'max:255'],
-            'total_amount' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', 'in:' . implode(',', \App\Enums\OrderStatus::cases())],
             'order_products' => ['required', 'array'],
             'order_products.*.product_id' => ['required', 'exists:products,id'],
             'order_products.*.quantity' => ['required', 'integer', 'min:1'],

@@ -30,4 +30,5 @@ Route::group([
 ], function () {
     Route::inertia('/', 'dashboard/index')->name('dashboard');
     Route::resource('/products', \App\Http\Controllers\ProductController::class);
+    Route::resource('/orders', \App\Http\Controllers\OrderController::class);
 });

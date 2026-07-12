@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Modifier;
+use App\Models\OrderProduct;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class OrderController extends Controller
      */
     public function create()
     {
-        //
+        return inertia('dashboard/order/create');
     }
 
     /**
@@ -35,19 +36,22 @@ class OrderController extends Controller
         $validatedData = $request->validated();
 
         $order = Order::create([
-            'user_id' => $validatedData['user_id'],
+            'staff_id' => $validatedData['staff_id'],
+            'customer_id' => $validatedData['customer_id'],
             'status' => OrderStatus::PENDING,
             'total_amount' => 0,
             'notes' => $validatedData['notes'] ?? null,
+            'order_number' => 'ORD-' . strtoupper(uniqid()),
         ]);
 
         $totalAmount = 0;
 
-        foreach ($validatedData['products'] as $items) {
+        foreach ($validatedData['order_products'] as $items) {
             $product = Product::findOrFail($items['product_id']);
             $productTotal = $product->price;
 
-            $orderProduct = $order->products()->create([
+            $orderProduct = new OrderProduct([
+                'order_id' => $order->id, // Ensure your OrderProduct model has order_id
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
@@ -64,6 +68,7 @@ class OrderController extends Controller
                     $productTotal += $modifiers->price;
 
                     $orderProduct->orderModifiers()->create([
+                        'order_product_id' => $order->id,
                         'modifier_id' => $modifiers->id,
                         'name' => $modifiers->name,
                         'price' => $modifiers->price,
@@ -78,7 +83,7 @@ class OrderController extends Controller
         // Update the total amount of the order
         $order->update(['total_amount' => $totalAmount]);
 
-        return response()->json(['message' => 'Order created successfully', 'order' => $order->load('products.orderModifiers')], 201);
+        return inertia('dashboard/order/show', ['order' => $order->load('products.orderModifiers')]);
     }
 
     /**
@@ -86,7 +91,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        //
+        return inertia('dashboard/order/show', ['order' => $order->load('products.orderModifiers')]);
     }
 
     /**

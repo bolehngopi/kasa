@@ -21,6 +21,7 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'manage users']);
         Permission::create(['name' => 'manage roles']);
         Permission::create(['name' => 'manage permissions']);
+        Permission::create(['name' => 'manage products']);
 
         $owner = Role::create(['name' => 'owner']);
         $owner->givePermissionTo('manage users');
@@ -29,7 +30,6 @@ class PermissionSeeder extends Seeder
         $owner->givePermissionTo('manage products');
 
         // staff
-        Permission::create(['name' => 'manage products']);
         Permission::create(['name' => 'manage orders']);
         Permission::create(['name' => 'manage customers']);
 

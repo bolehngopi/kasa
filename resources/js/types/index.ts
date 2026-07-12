@@ -31,6 +31,7 @@ export interface PaginatedProduct extends Paginated {
 
 export interface Product {
     id: number;
+    image_url?: string;
     name: string;
     slug: string;
     sku: string;
@@ -65,4 +66,41 @@ export interface Modifier {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+}
+
+export interface ProductOrder extends Product {
+    quantity: number;
+    modifiers?: Modifier[];
+    notes?: string;
+}
+
+export interface Order {
+    id: number;
+    staff: User;
+    customer: User;
+    order_number: string;
+    products: ProductOrder[];
+    notes?: string;
+    total_amount: number;
+    tax_amount: number;
+    discount_amount: number;
+    final_amount: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface StoreOrderRequest {
+    staff_id?: number;
+    customer_id?: number;
+    notes?: string;
+    order_products: {
+        product_id: number;
+        quantity: number;
+        notes?: string;
+        modifiers?: {
+            modifier_id: number;
+            quantity: number;
+        }[];
+    }[];
 }

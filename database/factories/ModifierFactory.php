@@ -22,6 +22,7 @@ class ModifierFactory extends Factory
 
         return [
             'modifier_group_id' => ModifierGroup::factory(),
+            'sku' => $this->faker->unique()->bothify('MOD-####'),
             'name' => $this->faker->word(),
             'price' => $this->faker->randomFloat(2, 0, 100),
             'sort_order' => $this->faker->randomDigit(),
