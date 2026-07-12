@@ -3,19 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['order_id', 'product_id', 'name', 'sku', 'image_url', 'quantity', 'price', 'notes'])]
-class OrderProduct extends Pivot
+class OrderProduct extends Model
 {
-    public $incrementing = true;
-
     /**
      * Get the order that this product belongs to.
      */
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     /**
@@ -23,13 +21,13 @@ class OrderProduct extends Pivot
      */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     /**
      * Get the modifiers associated with this order product.
      */
-    public function orderModifiers()
+    public function modifiers()
     {
         return $this->hasMany(OrderProductModifier::class, 'order_product_id');
     }

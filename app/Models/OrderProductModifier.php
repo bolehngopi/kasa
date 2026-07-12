@@ -13,7 +13,7 @@ class OrderProductModifier extends Model
      */
     public function orderProduct()
     {
-        return $this->belongsTo(OrderProduct::class);
+        return $this->belongsTo(OrderProduct::class, 'order_product_id');
     }
 
     /**
@@ -21,7 +21,7 @@ class OrderProductModifier extends Model
      */
     public function modifier()
     {
-        return $this->belongsTo(Modifier::class);
+        return $this->belongsTo(Modifier::class, 'modifier_id');
     }
 
     /**

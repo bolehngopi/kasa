@@ -1,6 +1,8 @@
 import type { Order } from "@/types";
 
 export default function OrderShow({ order }: { order: Order }) {
+    console.log("Order data:", order); // Log the order data to the console for debugging
+
     return (
         <div className="p-4">
             <h1 className="mb-4 text-2xl font-bold">Order Details</h1>
@@ -17,17 +19,17 @@ export default function OrderShow({ order }: { order: Order }) {
                 <strong>Status:</strong> {order.status}
             </p>
             <p>
-                <strong>Total Amount:</strong> {order.total_amount.toFixed(2)}
+                <strong>Total Amount:</strong> {order.total_amount}
             </p>
             <p>
-                <strong>Tax Amount:</strong> {order.tax_amount.toFixed(2)}
+                <strong>Tax Amount:</strong> {order.tax_amount}
             </p>
             <p>
                 <strong>Discount Amount:</strong>
-                {order.discount_amount.toFixed(2)}
+                {order.discount_amount}
             </p>
             <p>
-                <strong>Final Amount:</strong> {order.final_amount.toFixed(2)}
+                <strong>Final Amount:</strong> {order.final_amount}
             </p>
             <p>
                 <strong>Created At:</strong>{' '}
@@ -52,8 +54,8 @@ export default function OrderShow({ order }: { order: Order }) {
                             <ul className="list-disc pl-5">
                                 {product.modifiers.map((modifier, modIndex) => (
                                     <li key={modIndex}>
-                                        {modifier.name} - Price: 
-                                        {modifier.price.toFixed(2)}
+                                        {modifier.name} - Price:
+                                        {modifier.price}
                                     </li>
                                 ))}
                             </ul>

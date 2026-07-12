@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
+use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['staff_id', 'customer_id', 'order_number', 'status', 'notes', 'total_amount', 'tax_amount', 'discount_amount', 'final_amount'])]
 class Order extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderFactory> */
+    /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
     /**
@@ -29,24 +31,11 @@ class Order extends Model
     }
 
     /**
-     * Get the products associated with the order.
+     * Get the order products associated with the order.
      */
     public function products()
     {
-        return $this->belongsToMany(OrderProduct::class, 'order_product')
-            ->using(OrderProduct::class)
-            ->withPivot('id', 'name', 'sku', 'image_url', 'description', 'quantity', 'price', 'notes')
-            ->withTimestamps();
-    }
-
-    /**
-     * Get the products modifier associated with the order.
-     */
-    public function productModifiers()
-    {
-        return $this->belongsToMany(OrderProductModifier::class, 'order_product_modifier')
-            ->withPivot('quantity', 'price')
-            ->withTimestamps();
+        return $this->hasMany(OrderProduct::class);
     }
 
     /**
@@ -57,7 +46,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'status' => \App\Enums\OrderStatus::class,
+            'status' => OrderStatus::class,
             'total_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2',

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
-use App\Models\Order;
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Modifier;
-use App\Models\OrderProduct;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -35,55 +35,56 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
-        $order = Order::create([
-            'staff_id' => $validatedData['staff_id'],
-            'customer_id' => $validatedData['customer_id'],
-            'status' => OrderStatus::PENDING,
-            'total_amount' => 0,
-            'notes' => $validatedData['notes'] ?? null,
-            'order_number' => 'ORD-' . strtoupper(uniqid()),
-        ]);
-
-        $totalAmount = 0;
-
-        foreach ($validatedData['order_products'] as $items) {
-            $product = Product::findOrFail($items['product_id']);
-            $productTotal = $product->price;
-
-            $orderProduct = new OrderProduct([
-                'order_id' => $order->id, // Ensure your OrderProduct model has order_id
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'image_url' => $product->image_url,
-                'price' => $product->price,
-                'quantity' => $items['quantity'],
-                'notes' => $items['note'] ?? null,
+        $order = DB::transaction(function () use ($validatedData) {
+            $order = Order::create([
+                'staff_id' => $validatedData['staff_id'],
+                'customer_id' => $validatedData['customer_id'],
+                'status' => OrderStatus::PENDING,
+                'total_amount' => 0,
+                'notes' => $validatedData['notes'] ?? null,
+                'order_number' => 'ORD-'.strtoupper(uniqid()),
             ]);
 
-            if (!empty($items['modifiers'])) {
-                foreach ($items['modifiers'] as $modifierData) {
-                    $modifiers = Modifier::findOrFail($modifierData['modifier_id']);
+            $totalAmount = 0;
 
-                    $productTotal += $modifiers->price;
+            foreach ($validatedData['order_products'] as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                $productTotal = (float) $product->price;
 
-                    $orderProduct->orderModifiers()->create([
-                        'order_product_id' => $order->id,
-                        'modifier_id' => $modifiers->id,
-                        'name' => $modifiers->name,
-                        'price' => $modifiers->price,
-                        'sku' => $modifiers->sku,
-                    ]);
+                $orderProduct = $order->products()->create([
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'image_url' => $product->image_url,
+                    'price' => $product->price,
+                    'quantity' => $item['quantity'],
+                    'notes' => $item['note'] ?? null,
+                ]);
+
+                if (! empty($item['modifiers'])) {
+                    foreach ($item['modifiers'] as $modifierData) {
+                        $modifier = Modifier::findOrFail($modifierData['modifier_id']);
+
+                        $productTotal += (float) $modifier->price;
+
+                        $orderProduct->modifiers()->create([
+                            'modifier_id' => $modifier->id,
+                            'name' => $modifier->name,
+                            'price' => $modifier->price,
+                            'sku' => $modifier->sku,
+                        ]);
+                    }
                 }
+
+                $totalAmount += $productTotal * $item['quantity'];
             }
 
-            $totalAmount += ($productTotal * $items['quantity']);
-        }
+            $order->update(['total_amount' => $totalAmount]);
 
-        // Update the total amount of the order
-        $order->update(['total_amount' => $totalAmount]);
+            return $order->load('products.modifiers');
+        });
 
-        return inertia('dashboard/order/show', ['order' => $order->load('products.orderModifiers')]);
+        return redirect()->route('orders.show', $order)->with('success', 'Order created successfully.');
     }
 
     /**
@@ -91,7 +92,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        return inertia('dashboard/order/show', ['order' => $order->load('products.orderModifiers')]);
+        return inertia('dashboard/order/show', ['order' => $order->load('products.modifiers', 'staff', 'customer')]);
     }
 
     /**
