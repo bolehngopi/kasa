@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import type { Order, PaginatedOrder } from '@/types';
 
-export default function Order({ orders }: { orders: PaginatedOrder }) {
+export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
     console.log('Order data:', orders);
 
     return (

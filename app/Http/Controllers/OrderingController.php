@@ -19,7 +19,7 @@ class OrderingController extends Controller
             $query->whereIn('category_id', $selectedCat);
         });
 
-        return inertia('ordering/index', [
+        return inertia('order/index', [
             'products' => $product->with('modifierGroups.modifiers')->paginate(10)->withQueryString(),
             'categories' => \App\Models\Category::with('parent', 'children')->get(),
         ]);
