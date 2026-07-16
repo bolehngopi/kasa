@@ -155,7 +155,7 @@ export default function ViewOrder() {
                     </p>
                 )}
 
-                {calc.products?.length > 0 && calc && !loading && (
+                {calc?.products?.length && calc && !loading && (
                     <div className="mt-8 space-y-3 border-t pt-4">
                         <div className="flex justify-between text-xl font-bold text-gray-900">
                             <span>Subtotal</span>
