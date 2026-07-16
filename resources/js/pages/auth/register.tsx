@@ -2,16 +2,16 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { login, register } from '@/routes';
 
 export default function Register() {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, submit, processing, errors } = useForm({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
     });
 
-    const submit = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
-        post(register.url());
+        submit(register());
     };
 
     return (
@@ -24,7 +24,7 @@ export default function Register() {
                             Create an Account
                         </h1>
                     </div>
-                    <form className="w-full" onSubmit={submit}>
+                    <form className="w-full" onSubmit={handleSubmit}>
                         <div className="mb-4">
                             <label
                                 className="mb-2 block text-sm font-medium text-gray-700"

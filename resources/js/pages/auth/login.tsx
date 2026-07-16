@@ -5,15 +5,15 @@ import {
 } from '@/actions/App/Http/Controllers/AuthController';
 
 export default function Login() {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, processing, errors, submit } = useForm({
         email: '',
         password: '',
         password_confirmation: '',
     });
 
-    const submit = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
-        post(authenticate.url());
+        submit(authenticate());
     };
 
     return (
@@ -26,7 +26,7 @@ export default function Login() {
                             Welcome Back!
                         </h1>
                     </div>
-                    <form className="w-full" onSubmit={submit}>
+                    <form className="w-full" onSubmit={handleSubmit}>
                         <div className="mb-4">
                             <label
                                 className="mb-2 block text-sm font-medium text-gray-700"

@@ -33,4 +33,9 @@ Route::group([
     Route::resource('/orders', \App\Http\Controllers\OrderController::class);
 });
 
-Route::get('/ordering', \App\Http\Controllers\OrderingController::class)->name('ordering');
+Route::name('order.')->prefix('order')->group(function () {
+    Route::get('/', \App\Http\Controllers\OrderingController::class)->name('index');
+    Route::post('/calculate-total', [\App\Http\Controllers\CheckoutController::class, 'calculateTotal'])->name('calculateTotal');
+    Route::get('/view-order', [\App\Http\Controllers\CheckoutController::class, 'viewOrder'])->name('viewOrder');
+    Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'checkout'])->name('checkout');
+});

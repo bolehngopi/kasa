@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { StoreOrderRequest } from "@/types";
 
-type CartItem = StoreOrderRequest["order_products"][number];
+export type CartItem = StoreOrderRequest["order_products"][number];
 
 interface CartState {
     items: CartItem[];

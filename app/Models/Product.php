@@ -45,6 +45,8 @@ class Product extends Model
     {
         return [
             'is_active' => 'boolean',
+            'price' => 'decimal:2',
+            'stock' => 'integer',
         ];
     }
 }
