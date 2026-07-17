@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { viewOrder } from '@/routes/order';
+import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
 import type { CartItem } from '@/store/cart-store';
 import type { Category, PaginatedProduct } from '@/types';
@@ -14,7 +14,7 @@ export default function Order({ products, categories }: OrderingProps) {
 
     const handleCategoryClick = (categoryId: number) => {
         router.get(
-            viewOrder.url(),
+            order.index.url(),
             { category_id: categoryId },
             { preserveState: true, preserveScroll: true, only: ['products'] },
         );
@@ -22,7 +22,7 @@ export default function Order({ products, categories }: OrderingProps) {
 
     const handleResetCategoryClick = () => {
         router.get(
-            viewOrder.url(),
+            order.index.url(),
             {},
             { preserveState: true, preserveScroll: true, only: ['products'] },
         );
