@@ -124,15 +124,15 @@ export default function ViewOrder() {
                                                     <p className="text-xs font-medium text-gray-500">
                                                         Customizations Added:
                                                     </p>
-                                                    <p className="text-xs text-gray-400">
-                                                        ID items active:{' '}
-                                                        {displayItem.modifiers
-                                                            .map(
-                                                                (modifier) =>
-                                                                    modifier.id,
-                                                            )
-                                                            .join(', ')}
-                                                    </p>
+                                                    {displayItem.modifiers.map((mod: BackendModifier) => (
+                                                            <p
+                                                                key={mod.id}
+                                                                className="text-xs text-gray-400"
+                                                            >
+                                                                {mod.name}
+                                                            </p>
+                                                        ),
+                                                    )}
                                                 </div>
                                             )}
                                     </div>
