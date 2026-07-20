@@ -1,6 +1,7 @@
 import { Head, Link, useHttp } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { calculateTotal, checkout } from '@/routes/order';
+import { checkout } from '@/routes';
+import { calculateTotal } from '@/routes/order';
 import { useCart } from '@/store/cart-store';
 import type { CartItem } from '@/store/cart-store';
 
