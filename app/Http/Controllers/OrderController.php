@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Http\Requests\StoreOrderRequest;
+use App\Models\Category;
 use App\Models\Modifier;
 use App\Models\Order;
 use App\Models\Product;
@@ -47,7 +48,7 @@ class OrderController extends Controller
                 'status' => OrderStatus::PENDING,
                 'total_amount' => 0,
                 'notes' => $validatedData['notes'] ?? null,
-                'order_number' => 'ORD-'.strtoupper(uniqid()),
+                'order_number' => 'ORD-' . strtoupper(uniqid()),
             ]);
 
             $totalAmount = 0;
@@ -66,7 +67,7 @@ class OrderController extends Controller
                     'notes' => $item['note'] ?? null,
                 ]);
 
-                if (! empty($item['modifiers'])) {
+                if (!empty($item['modifiers'])) {
                     foreach ($item['modifiers'] as $modifierData) {
                         $modifier = Modifier::findOrFail($modifierData['modifier_id']);
 
@@ -122,5 +123,21 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
         //
+    }
+
+    public function ordering(Request $request)
+    {
+        $selectedCat = (array) $request->input('category_id', []);
+
+        $product = Product::query();
+
+        $product->when(!empty($selectedCat), function ($query) use ($selectedCat) {
+            $query->whereIn('category_id', $selectedCat);
+        });
+
+        return inertia('order/index', [
+            'products' => $product->with('modifierGroups.modifiers')->paginate(10)->withQueryString(),
+            'categories' => Category::with('parent', 'children')->get(),
+        ]);
     }
 }
