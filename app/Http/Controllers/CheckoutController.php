@@ -14,7 +14,12 @@ class CheckoutController extends Controller
 
     public function checkout(Request $request)
     {
-        return inertia('order/checkout');
+        return inertia('checkout');
+    }
+
+    public function index(Request $request)
+    {
+        //
     }
 
     public function calculateTotal(Request $request)
