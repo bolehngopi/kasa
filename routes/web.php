@@ -38,4 +38,4 @@ Route::name('order.')->prefix('order')->group(function () {
     Route::post('/calculate-total', [\App\Http\Controllers\CheckoutController::class, 'calculateTotal'])->name('calculateTotal');
     Route::get('/view-order', [\App\Http\Controllers\CheckoutController::class, 'viewOrder'])->name('viewOrder');
 });
-Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'checkout'])->name('checkout');
+Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');

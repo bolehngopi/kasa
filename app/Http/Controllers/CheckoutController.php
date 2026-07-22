@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
+use App\Models\Modifier;
+use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
@@ -12,14 +17,97 @@ class CheckoutController extends Controller
         return inertia('order/view-order');
     }
 
-    public function checkout(Request $request)
+    public function index(Request $request)
     {
         return inertia('checkout');
     }
 
-    public function index(Request $request)
+    public function checkout(Request $request)
     {
-        //
+        $validate = $request->validate([
+            'customer_name' => 'required|string|max:50',
+            'customer_last_name' => 'nullable|string|max:50',
+            'customer_email' => 'required|email|max:50',
+            'customer_phone' => 'required|string|max:50',
+            'cart' => 'required|array',
+            'cart.*.id' => 'required|exists:products,id',
+            'cart.*.quantity' => 'required|integer|min:1',
+            'cart.*.notes' => 'nullable|string|max:50',
+            'cart.*.modifiers' => 'nullable|array',
+            'cart.*.modifiers.*' => 'exists:modifiers,id',
+        ]);
+
+        $order = DB::transaction(function () use ($validate, $request) {
+            $productIds = collect($validate['cart'])->pluck('id')->unique();
+
+            $products = Product::with('modifierGroups.modifiers')
+                ->whereIn('id', $productIds)
+                ->get()
+                ->keyBy('id');
+
+            $order = Order::create([
+                'customer_id' => $request->user()->id ?? null,
+                'status' => OrderStatus::PENDING,
+                'total_amount' => 0,
+                'notes' => $validate['notes'] ?? null,
+                'order_number' => 'ORD-' . strtoupper(uniqid()),
+            ]);
+
+            $totalAmount = 0;
+
+            foreach ($validate['cart'] as $item) {
+                $product = $products->get($item['id']);
+
+                if (!$product) {
+                    throw (new ModelNotFoundException)->setModel(Product::class, $item['id']);
+                }
+
+                $productTotal = (float) $product->price;
+
+                $orderProduct = $order->products()->create([
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'image_url' => $product->image_url,
+                    'price' => $product->price,
+                    'quantity' => $item['quantity'],
+                    'notes' => $item['notes'] ?? null,
+                ]);
+
+                if (!empty($item['modifiers'])) {
+                    $modifiersToInsert = [];
+
+                    $availableModifiers = $product->modifierGroups->flatMap->modifiers;
+
+                    foreach ($item['modifiers'] as $modifierData) {
+                        $modifier = $availableModifiers->firstWhere('id', $modifierData['id']);
+
+                        if (!$modifier) {
+                            throw new \Exception("Modifier ID {$modifierData['id']} not found or not assigned to product {$product->id}");
+                        }
+
+                        $productTotal += (float) $modifier->price;
+
+                        $modifiersToInsert[] = [
+                            'modifier_id' => $modifier->id,
+                            'name' => $modifier->name,
+                            'price' => $modifier->price,
+                            'sku' => $modifier->sku,
+                        ];
+                    }
+
+                    if (!empty($modifiersToInsert)) {
+                        $orderProduct->modifiers()->createMany($modifiersToInsert);
+                    }
+                }
+
+                $totalAmount += $productTotal * $item['quantity'];
+            }
+
+            $order->update(['total_amount' => $totalAmount]);
+
+            return $order->load('products.modifiers');
+        });
     }
 
     public function calculateTotal(Request $request)
