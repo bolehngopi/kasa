@@ -2,7 +2,6 @@ import { Head, useHttp } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import type { CartItem, CalculateTotalResponse } from '@/store/cart-store';
 import { useCart } from '@/store/cart-store';
-import { calculateTotal } from '@/routes/order'; // Adjust import if your route helper is different
 
 interface CheckoutData {
     customer_name: string;
