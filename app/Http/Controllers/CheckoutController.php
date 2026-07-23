@@ -27,8 +27,8 @@ class CheckoutController extends Controller
         $validate = $request->validate([
             'customer_name' => 'required|string|max:50',
             'customer_last_name' => 'nullable|string|max:50',
-            'customer_email' => 'required|email|max:50',
-            'customer_phone' => 'required|string|max:50',
+            'customer_email' => 'nullable|email|max:50',
+            'customer_phone' => 'nullable|string|max:50',
             'cart' => 'required|array',
             'cart.*.id' => 'required|exists:products,id',
             'cart.*.quantity' => 'required|integer|min:1',
@@ -46,7 +46,7 @@ class CheckoutController extends Controller
                 ->keyBy('id');
 
             $order = Order::create([
-                'customer_id' => $request->user()->id ?? null,
+                'customer_id' => null,
                 'status' => OrderStatus::PENDING,
                 'total_amount' => 0,
                 'notes' => $validate['notes'] ?? null,

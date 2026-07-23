@@ -39,6 +39,14 @@ class Order extends Model
     }
 
     /**
+     * Get the payment associated with the order.
+     */
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

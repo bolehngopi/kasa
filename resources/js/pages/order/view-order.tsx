@@ -3,26 +3,11 @@ import { useEffect, useState } from 'react';
 import { checkout } from '@/routes';
 import { calculateTotal } from '@/routes/order';
 import { useCart } from '@/store/cart-store';
-import type { CartItem } from '@/store/cart-store';
-
-interface BackendModifier {
-    id: number;
-    name: string;
-    price: string | number;
-}
-
-interface BackendProduct {
-    id: number;
-    name: string;
-    price: string | number;
-    quantity: number;
-    modifiers: BackendModifier[];
-}
-
-interface CalculateTotalResponse {
-    products: BackendProduct[];
-    subtotal: string;
-}
+import type {
+    CartItem,
+    BackendModifier,
+    CalculateTotalResponse,
+} from '@/store/cart-store';
 
 interface CalculateTotalPayload {
     products: Array<{
@@ -37,18 +22,22 @@ function mapCartItemsToPayload(items: CartItem[]): CalculateTotalPayload {
         products: items.map((item) => ({
             id: item.product_id,
             quantity: item.quantity,
-            modifiers:
-                item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
+            modifiers: item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
         })),
     };
 }
 
 export default function ViewOrder() {
-    const { items } = useCart();
+    // Destructure set and remove to handle our editing actions
+    const { items, set, remove } = useCart();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const calculation = useHttp(mapCartItemsToPayload(items));
-    const [calc, setCalc] = useState<CalculateTotalResponse>();
+    const [calc, setCalc] = useState<CalculateTotalResponse | null>();
+
+    // State for handling inline note editing
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [noteText, setNoteText] = useState<string>('');
 
     useEffect(() => {
         if (items.length === 0) {
@@ -64,7 +53,6 @@ export default function ViewOrder() {
             await calculation.post(calculateTotal.url(), {
                 onSuccess: (data) => {
                     setCalc(data as CalculateTotalResponse);
-                    console.log(data);
                 },
                 onHttpException: (response) => {
                     setError(response.data);
@@ -75,6 +63,14 @@ export default function ViewOrder() {
 
         fetchTotal();
     }, [items]);
+
+    // Action to save the updated note to the Zustand store
+    const handleSaveNote = (index: number) => {
+        const updatedItems = [...items];
+        updatedItems[index] = { ...updatedItems[index], notes: noteText };
+        set(updatedItems);
+        setEditingIndex(null);
+    };
 
     return (
         <>
@@ -95,54 +91,108 @@ export default function ViewOrder() {
 
                 {/* Items List */}
                 <div className="space-y-4">
-                    {calc?.products?.length === 0 ? (
+                    {items.length === 0 ? (
                         <p className="py-6 text-center text-gray-500">
                             Your cart is currently empty.
                         </p>
                     ) : (
-                        calc?.products?.map((item: BackendProduct) => {
-                            const displayItem = item;
+                        // Map over local ITEMS instead of calc so notes persist and items don't disappear during load
+                        items.map((cartItem: CartItem, index: number) => {
+                            // Safely grab the calculated API details for this specific item if they exist yet
+                            const calculatedItem = calc?.products?.[index];
 
                             return (
                                 <div
-                                    key={displayItem.id}
-                                    className="flex items-start justify-between rounded-xl border bg-gray-50 p-4"
+                                    key={`${cartItem.product_id}-${index}`}
+                                    className={`flex flex-col rounded-xl border bg-gray-50 p-4 transition-opacity duration-200 ${loading ? 'opacity-60' : 'opacity-100'}`}
                                 >
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">
-                                            {displayItem.name ||
-                                                `Product #{displayItem.id}`}
-                                        </h3>
-                                        <p className="mt-1 text-sm text-gray-600">
-                                            Quantity: {displayItem.quantity}
-                                        </p>
+                                    {/* Top Half: Product Details & Price */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">
+                                                {calculatedItem?.name || `Product #${cartItem.product_id}`}
+                                            </h3>
+                                            <p className="mt-1 text-sm text-gray-600">
+                                                Quantity: {cartItem.quantity}
+                                            </p>
 
-                                        {/* Render UI modifiers list if the user has chosen any */}
-                                        {displayItem.modifiers &&
-                                            displayItem.modifiers.length >
-                                                0 && (
+                                            {calculatedItem?.modifiers && calculatedItem.modifiers.length > 0 && (
                                                 <div className="mt-2 border-l-2 border-gray-300 pl-2">
                                                     <p className="text-xs font-medium text-gray-500">
                                                         Customizations Added:
                                                     </p>
-                                                    {displayItem.modifiers.map((mod: BackendModifier) => (
-                                                            <p
-                                                                key={mod.id}
-                                                                className="text-xs text-gray-400"
-                                                            >
-                                                                {mod.name}
-                                                            </p>
-                                                        ),
-                                                    )}
+                                                    {calculatedItem.modifiers.map((mod: BackendModifier) => (
+                                                        <p key={mod.id} className="text-xs text-gray-400">
+                                                            {mod.name}
+                                                        </p>
+                                                    ))}
                                                 </div>
                                             )}
+                                        </div>
+                                        <span className="font-semibold text-gray-900">
+                                            {calculatedItem
+                                                ? (Number(calculatedItem.price || 0) * cartItem.quantity).toFixed(2)
+                                                : '...'
+                                            }
+                                        </span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">
-                                        {(
-                                            Number(displayItem.price || 0) *
-                                            displayItem.quantity
-                                        ).toFixed(2)}
-                                    </span>
+
+                                    {/* Bottom Half: Notes & Actions Area */}
+                                    <div className="mt-4 border-t border-gray-200 pt-3">
+                                        {editingIndex === index ? (
+                                            <div className="flex flex-col gap-3">
+                                                <textarea
+                                                    value={noteText}
+                                                    onChange={(e) => setNoteText(e.target.value)}
+                                                    placeholder="Add special instructions (e.g., less sugar, extra spicy)..."
+                                                    className="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    rows={2}
+                                                />
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setEditingIndex(null)}
+                                                        className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 transition"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSaveNote(index)}
+                                                        className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition"
+                                                    >
+                                                        Save Note
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="text-sm text-gray-600 flex-1">
+                                                    {cartItem.notes ? (
+                                                        <p><span className="font-semibold text-gray-700">Note:</span> {cartItem.notes}</p>
+                                                    ) : (
+                                                        <p className="italic text-gray-400">No notes added.</p>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingIndex(index);
+                                                            setNoteText(cartItem.notes || '');
+                                                        }}
+                                                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        {cartItem.notes ? 'Edit Note' : 'Add Note'}
+                                                    </button>
+                                                    <span className="text-gray-300">|</span>
+                                                    <button
+                                                        onClick={() => remove(index)}
+                                                        className="text-sm font-medium text-red-600 hover:text-red-800"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })
@@ -151,12 +201,12 @@ export default function ViewOrder() {
 
                 {/* Summary Totals Block */}
                 {loading && (
-                    <p className="mt-4 animate-pulse text-sm text-gray-400">
+                    <p className="mt-4 animate-pulse text-sm text-gray-400 text-right">
                         Recalculating items...
                     </p>
                 )}
 
-                {calc?.products?.length && calc && !loading && (
+                {items.length > 0 && calc && !loading && (
                     <div className="mt-8 space-y-3 border-t pt-4">
                         <div className="flex justify-between text-xl font-bold text-gray-900">
                             <span>Subtotal</span>

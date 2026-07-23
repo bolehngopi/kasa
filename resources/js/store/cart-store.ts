@@ -4,6 +4,25 @@ import type { StoreOrderRequest } from "@/types";
 
 export type CartItem = StoreOrderRequest["order_products"][number];
 
+export interface BackendModifier {
+    id: number;
+    name: string;
+    price: string | number;
+}
+
+export interface BackendProduct {
+    id: number;
+    name: string;
+    price: string | number;
+    quantity: number;
+    modifiers: BackendModifier[];
+}
+
+export interface CalculateTotalResponse {
+    products: BackendProduct[];
+    subtotal: string;
+}
+
 interface CartState {
     items: CartItem[];
     add: (item: CartItem) => void;
@@ -20,17 +39,17 @@ export const useCart = create(
             items: [],
             add: (item) => {
                 const items = [...get().items, item];
-                set({ items });
+                set({ items});
             },
             remove: (index) => {
                 const items = get().items.filter((_, currentIndex) => currentIndex !== index);
-                set({ items });
+                set({ items});
             },
             set: (items) => {
-                set({ items });
+                set({ items});
             },
             clear: () => {
-                set({ items: [] });
+                set({ items: []});
             },
         }),
         {
