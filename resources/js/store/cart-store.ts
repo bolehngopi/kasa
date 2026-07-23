@@ -15,6 +15,7 @@ export interface BackendProduct {
     name: string;
     price: string | number;
     quantity: number;
+    notes?: string;
     modifiers: BackendModifier[];
 }
 

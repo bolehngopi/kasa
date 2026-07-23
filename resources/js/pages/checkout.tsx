@@ -1,15 +1,16 @@
-import { Head, useHttp } from '@inertiajs/react';
+import { Head, router, useHttp } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { calculateTotal } from '@/routes/order';
 import type { CartItem, CalculateTotalResponse } from '@/store/cart-store';
 import { useCart } from '@/store/cart-store';
+import { checkout } from '@/routes';
 
 interface CheckoutData {
     customer_name: string;
-    customer_last_name: string;
+    customer_last_name?: string;
     customer_email: string;
     cart: CartItem[];
-    payment_type: 'cash' | 'qris' | '';
+    payment_method: 'cash' | 'qris' | '';
 }
 
 function mapCartItemsToPayload(items: CartItem[]) {
@@ -24,16 +25,16 @@ function mapCartItemsToPayload(items: CartItem[]) {
 }
 
 export default function Checkout() {
-    const { items } = useCart();
+    const { items, clear } = useCart();
     const [calc, setCalc] = useState<CalculateTotalResponse | null>();
-
     const [data, setData] = useState<CheckoutData>({
         customer_name: '',
         customer_last_name: '',
         customer_email: '',
         cart: items,
-        payment_type: 'cash',
+        payment_method: 'cash',
     });
+    const checkoutHttp = useHttp(data);
 
     const calculation = useHttp(mapCartItemsToPayload(items));
     const [isCalculating, setIsCalculating] = useState<boolean>(
@@ -69,10 +70,18 @@ export default function Checkout() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.SubmitEvent) => {
         e.preventDefault();
-        console.log('Submitting order payload:', data);
-        // TODO: Replace with Inertia post request
+        checkoutHttp.setData(data);
+
+        checkoutHttp.post(checkout.url(), {
+            onSuccess: () => {
+                clear();
+            },
+            onError: (errors) => {
+                console.log('Error:', errors);
+            },
+        });
     };
 
     return (
@@ -168,14 +177,14 @@ export default function Checkout() {
                                 </h2>
                                 <div className="flex space-x-4">
                                     <label
-                                        className={`flex w-1/2 cursor-pointer items-center justify-center rounded-xl border-2 p-4 transition-all ${data.payment_type === 'cash' ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                                        className={`flex w-1/2 cursor-pointer items-center justify-center rounded-xl border-2 p-4 transition-all ${data.payment_method === 'cash' ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                                     >
                                         <input
                                             type="radio"
                                             name="payment_type"
                                             value="cash"
                                             checked={
-                                                data.payment_type === 'cash'
+                                                data.payment_method === 'cash'
                                             }
                                             onChange={handleInputChange}
                                             className="sr-only"
@@ -186,14 +195,14 @@ export default function Checkout() {
                                     </label>
 
                                     <label
-                                        className={`flex w-1/2 cursor-pointer items-center justify-center rounded-xl border-2 p-4 transition-all ${data.payment_type === 'qris' ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                                        className={`flex w-1/2 cursor-pointer items-center justify-center rounded-xl border-2 p-4 transition-all ${data.payment_method === 'qris' ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                                     >
                                         <input
                                             type="radio"
                                             name="payment_type"
                                             value="qris"
                                             checked={
-                                                data.payment_type === 'qris'
+                                                data.payment_method === 'qris'
                                             }
                                             onChange={handleInputChange}
                                             className="sr-only"
@@ -231,7 +240,7 @@ export default function Checkout() {
                                 )}
                             </div>
 
-                            <div className="max-h-[500px] space-y-4 overflow-y-auto pr-2">
+                            <div className="max-h-125 space-y-4 overflow-y-auto pr-2">
                                 {calc?.products ? (
                                     calc.products.map((item, index) => (
                                         // Using index as fallback key in case IDs repeat (like the two 'omnis' items in your JSON)
@@ -316,7 +325,8 @@ export default function Checkout() {
                                     </span>
                                 </div>
                                 <p className="text-right text-sm text-gray-500">
-                                    Paying via {data.payment_type.toUpperCase()}
+                                    Paying via{' '}
+                                    {data.payment_method.toUpperCase()}
                                 </p>
                             </div>
                         </div>
