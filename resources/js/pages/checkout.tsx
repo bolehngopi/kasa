@@ -1,5 +1,6 @@
 import { Head, useHttp } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import { calculateTotal } from '@/routes/order';
 import type { CartItem, CalculateTotalResponse } from '@/store/cart-store';
 import { useCart } from '@/store/cart-store';
 
