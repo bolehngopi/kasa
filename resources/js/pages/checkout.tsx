@@ -12,7 +12,6 @@ interface CheckoutData {
     payment_type: 'cash' | 'qris' | '';
 }
 
-// Re-using the payload mapper
 function mapCartItemsToPayload(items: CartItem[]) {
     return {
         products: items.map((item) => ({
@@ -25,7 +24,6 @@ function mapCartItemsToPayload(items: CartItem[]) {
 }
 
 export default function Checkout() {
-    // Pull setCalc to update the store if we need to fetch
     const { items } = useCart();
     const [calc, setCalc] = useState<CalculateTotalResponse | null>();
 
@@ -37,13 +35,11 @@ export default function Checkout() {
         payment_type: 'cash',
     });
 
-    // Setup HTTP request for fetching totals
     const calculation = useHttp(mapCartItemsToPayload(items));
     const [isCalculating, setIsCalculating] = useState<boolean>(
         !calc && items.length > 0,
     );
 
-    // Fetch the calculation if it doesn't exist in the store yet
     useEffect(() => {
         if (items.length === 0 || calc) {
             return;
