@@ -41,9 +41,9 @@ class Order extends Model
     /**
      * Get the payment associated with the order.
      */
-    public function payment()
+    public function payments()
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasMany(Payment::class);
     }
 
     /**

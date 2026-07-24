@@ -43,5 +43,5 @@ Route::group([
     'prefix' => 'checkout',
 ], function () {
     Route::get('/', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
-    Route::post('/', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('storeCheckout');
+    Route::post('/', [\App\Http\Controllers\CheckoutController::class, 'checkout'])->name('storeCheckout');
 });

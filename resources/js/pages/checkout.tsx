@@ -1,9 +1,9 @@
-import { Head, router, useHttp } from '@inertiajs/react';
+import { Head, useForm, useHttp } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import { storeCheckout } from '@/routes';
 import { calculateTotal } from '@/routes/order';
 import type { CartItem, CalculateTotalResponse } from '@/store/cart-store';
 import { useCart } from '@/store/cart-store';
-import { checkout } from '@/routes';
 
 interface CheckoutData {
     customer_name: string;
@@ -27,14 +27,14 @@ function mapCartItemsToPayload(items: CartItem[]) {
 export default function Checkout() {
     const { items, clear } = useCart();
     const [calc, setCalc] = useState<CalculateTotalResponse | null>();
-    const [data, setData] = useState<CheckoutData>({
+
+    const { data, setData, post, processing, errors, transform } = useForm<CheckoutData>({
         customer_name: '',
         customer_last_name: '',
         customer_email: '',
         cart: items,
         payment_method: 'cash',
     });
-    const checkoutHttp = useHttp(data);
 
     const calculation = useHttp(mapCartItemsToPayload(items));
     const [isCalculating, setIsCalculating] = useState<boolean>(
@@ -64,23 +64,21 @@ export default function Checkout() {
     }, [items, calc, setCalc]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setData({
-            ...data,
-            [e.target.name]: e.target.value,
-        });
+        setData(e.target.name as keyof CheckoutData, e.target.value);
     };
 
     const handleSubmit = (e: React.SubmitEvent) => {
         e.preventDefault();
-        checkoutHttp.setData(data);
+        transform((currentData) => ({
+        ...currentData,
+        cart: items,
+    }));
 
-        checkoutHttp.post(checkout.url(), {
+        post(storeCheckout.url(), {
             onSuccess: () => {
                 clear();
             },
-            onError: (errors) => {
-                console.log('Error:', errors);
-            },
+            preserveScroll: true,
         });
     };
 
@@ -112,9 +110,7 @@ export default function Checkout() {
                                             className="block text-sm font-medium text-gray-700"
                                         >
                                             First Name{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -123,9 +119,12 @@ export default function Checkout() {
                                             value={data.customer_name}
                                             placeholder="First Name"
                                             onChange={handleInputChange}
-                                            required
-                                            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            className={`mt-1 block w-full rounded-lg border px-4 py-2.5 shadow-sm focus:outline-none focus:ring-1 ${errors.customer_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
                                         />
+                                        {/* Display validation error */}
+                                        {errors.customer_name && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.customer_name}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label
@@ -141,8 +140,11 @@ export default function Checkout() {
                                             placeholder="Last Name"
                                             value={data.customer_last_name}
                                             onChange={handleInputChange}
-                                            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            className={`mt-1 block w-full rounded-lg border px-4 py-2.5 shadow-sm focus:outline-none focus:ring-1 ${errors.customer_last_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
                                         />
+                                        {errors.customer_last_name && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.customer_last_name}</p>
+                                        )}
                                     </div>
                                     <div className="sm:col-span-2">
                                         <label
@@ -150,9 +152,7 @@ export default function Checkout() {
                                             className="block text-sm font-medium text-gray-700"
                                         >
                                             Email Address{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="email"
@@ -161,8 +161,11 @@ export default function Checkout() {
                                             placeholder="blabla@email.com"
                                             value={data.customer_email}
                                             onChange={handleInputChange}
-                                            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            className={`mt-1 block w-full rounded-lg border px-4 py-2.5 shadow-sm focus:outline-none focus:ring-1 ${errors.customer_email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
                                         />
+                                        {errors.customer_email && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.customer_email}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -181,11 +184,9 @@ export default function Checkout() {
                                     >
                                         <input
                                             type="radio"
-                                            name="payment_type"
+                                            name="payment_method" // Fixed mapping name
                                             value="cash"
-                                            checked={
-                                                data.payment_method === 'cash'
-                                            }
+                                            checked={data.payment_method === 'cash'}
                                             onChange={handleInputChange}
                                             className="sr-only"
                                         />
@@ -199,11 +200,9 @@ export default function Checkout() {
                                     >
                                         <input
                                             type="radio"
-                                            name="payment_type"
+                                            name="payment_method" // Fixed mapping name
                                             value="qris"
-                                            checked={
-                                                data.payment_method === 'qris'
-                                            }
+                                            checked={data.payment_method === 'qris'}
                                             onChange={handleInputChange}
                                             className="sr-only"
                                         />
@@ -212,15 +211,21 @@ export default function Checkout() {
                                         </span>
                                     </label>
                                 </div>
+                                {errors.payment_method && (
+                                    <p className="mt-2 text-xs text-red-500">{errors.payment_method}</p>
+                                )}
                             </div>
 
                             <button
                                 type="submit"
+                                // Also disable button while `processing` is true so they don't double click
                                 className="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3.5 text-lg font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                disabled={items.length === 0 || isCalculating}
+                                disabled={items.length === 0 || isCalculating || processing}
                             >
                                 {isCalculating
                                     ? 'Calculating...'
+                                    : processing
+                                    ? 'Processing Order...'
                                     : 'Place Order'}
                             </button>
                         </form>
@@ -243,7 +248,6 @@ export default function Checkout() {
                             <div className="max-h-125 space-y-4 overflow-y-auto pr-2">
                                 {calc?.products ? (
                                     calc.products.map((item, index) => (
-                                        // Using index as fallback key in case IDs repeat (like the two 'omnis' items in your JSON)
                                         <div
                                             key={`${item.id}-${index}`}
                                             className="flex justify-between border-b border-gray-200 py-3 last:border-0"
@@ -259,7 +263,6 @@ export default function Checkout() {
                                                     {item.notes}
                                                 </p>
 
-                                                {/* Render Modifiers if present */}
                                                 {item.modifiers &&
                                                     item.modifiers.length >
                                                         0 && (
@@ -267,15 +270,10 @@ export default function Checkout() {
                                                             {item.modifiers.map(
                                                                 (mod) => (
                                                                     <p
-                                                                        key={
-                                                                            mod.id
-                                                                        }
+                                                                        key={mod.id}
                                                                         className="text-xs text-gray-500"
                                                                     >
-                                                                        +{' '}
-                                                                        {
-                                                                            mod.name
-                                                                        }
+                                                                        + {mod.name}
                                                                     </p>
                                                                 ),
                                                             )}
@@ -291,7 +289,6 @@ export default function Checkout() {
                                         </div>
                                     ))
                                 ) : items.length > 0 ? (
-                                    /* Fallback while calculating */
                                     items.map((item, idx) => (
                                         <div
                                             key={idx}
@@ -314,7 +311,6 @@ export default function Checkout() {
                                 )}
                             </div>
 
-                            {/* Subtotal from store */}
                             <div className="mt-6 space-y-2 border-t border-gray-200 pt-4">
                                 <div className="flex justify-between text-lg font-bold text-gray-900">
                                     <span>Total to Pay</span>

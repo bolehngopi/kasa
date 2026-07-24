@@ -25,41 +25,50 @@ class CheckoutController extends Controller
     public function checkout(Request $request)
     {
         $validate = $request->validate([
-            'customer_name' => 'required|string|max:50',
-            'customer_last_name' => 'nullable|string|max:50',
-            'customer_email' => 'nullable|email|max:50',
+            'customer_id' => 'nullable|exists:users,id',
+            'customer_name' => 'nullable|string|max:100',
+            'customer_last_name' => 'nullable|string|max:100',
+            'customer_email' => 'nullable|email|max:150',
             'customer_phone' => 'nullable|string|max:50',
+            'payment_method' => 'required|in:cash,qris',
             'cart' => 'required|array',
-            'cart.*.id' => 'required|exists:products,id',
+            'cart.*.product_id' => 'required|exists:products,id',
             'cart.*.quantity' => 'required|integer|min:1',
-            'cart.*.notes' => 'nullable|string|max:50',
+            'cart.*.notes' => 'nullable|string|max:500',
             'cart.*.modifiers' => 'nullable|array',
-            'cart.*.modifiers.*' => 'exists:modifiers,id',
+            'cart.*.modifiers.*.modifier_id' => 'required|exists:modifiers,id',
         ]);
 
-        $order = DB::transaction(function () use ($validate, $request) {
-            $productIds = collect($validate['cart'])->pluck('id')->unique();
+        $order = DB::transaction(function () use ($validate) {
+            $productIds = collect($validate['cart'])->pluck('product_id')->unique();
 
             $products = Product::with('modifierGroups.modifiers')
                 ->whereIn('id', $productIds)
                 ->get()
                 ->keyBy('id');
 
+            $fullName = trim(($validate['customer_name'] ?? '') . ' ' . ($validate['customer_last_name'] ?? ''));
+
             $order = Order::create([
-                'customer_id' => null,
+                'customer_id' => $validate['customer_id'] ?? null,
+                'customer_name' => $fullName ?: null,
+                'customer_email' => $validate['customer_email'] ?? null,
+                'customer_phone' => $validate['customer_phone'] ?? null,
                 'status' => OrderStatus::PENDING,
                 'total_amount' => 0,
-                'notes' => $validate['notes'] ?? null,
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'final_amount' => 0,
                 'order_number' => 'ORD-' . strtoupper(uniqid()),
             ]);
 
             $totalAmount = 0;
 
             foreach ($validate['cart'] as $item) {
-                $product = $products->get($item['id']);
+                $product = $products->get($item['product_id']);
 
                 if (!$product) {
-                    throw (new ModelNotFoundException)->setModel(Product::class, $item['id']);
+                    throw (new ModelNotFoundException)->setModel(Product::class, $item['product_id']);
                 }
 
                 $productTotal = (float) $product->price;
@@ -76,14 +85,13 @@ class CheckoutController extends Controller
 
                 if (!empty($item['modifiers'])) {
                     $modifiersToInsert = [];
-
                     $availableModifiers = $product->modifierGroups->flatMap->modifiers;
 
                     foreach ($item['modifiers'] as $modifierData) {
-                        $modifier = $availableModifiers->firstWhere('id', $modifierData['id']);
+                        $modifier = $availableModifiers->firstWhere('id', $modifierData['modifier_id']);
 
                         if (!$modifier) {
-                            throw new \Exception("Modifier ID {$modifierData['id']} not found or not assigned to product {$product->id}");
+                            throw new \Exception("Modifier ID {$modifierData['modifier_id']} not found or not assigned to product {$product->id}");
                         }
 
                         $productTotal += (float) $modifier->price;
@@ -92,7 +100,7 @@ class CheckoutController extends Controller
                             'modifier_id' => $modifier->id,
                             'name' => $modifier->name,
                             'price' => $modifier->price,
-                            'sku' => $modifier->sku,
+                            'sku' => $modifier->sku ?? null,
                         ];
                     }
 
@@ -104,10 +112,22 @@ class CheckoutController extends Controller
                 $totalAmount += $productTotal * $item['quantity'];
             }
 
-            $order->update(['total_amount' => $totalAmount]);
+            $order->update([
+                'total_amount' => $totalAmount,
+                'final_amount' => $totalAmount,
+            ]);
 
-            return $order->load('products.modifiers');
+            $order->payments()->create([
+                'payment_method' => $validate['payment_method'],
+                'amount' => $totalAmount,
+                'status' => 'PENDING'
+            ]);
+
+            return $order;
         });
+
+        return redirect()->route('orders.show', $order->id)
+            ->with('success', 'Order placed successfully!');
     }
 
     public function calculateTotal(Request $request)
