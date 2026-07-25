@@ -59,7 +59,7 @@ class CheckoutController extends Controller
                 'tax_amount' => 0,
                 'discount_amount' => 0,
                 'final_amount' => 0,
-                'order_number' => 'ORD-' . strtoupper(uniqid()),
+                'order_number' => 'ORD-' . date('Ymd') . strtoupper(uniqid()),
             ]);
 
             $totalAmount = 0;
@@ -80,7 +80,7 @@ class CheckoutController extends Controller
                     'image_url' => $product->image_url,
                     'price' => $product->price,
                     'quantity' => $item['quantity'],
-                    'notes' => $item['notes'] ?? null,
+                    'notes' => $item['notes'],
                 ]);
 
                 if (!empty($item['modifiers'])) {
@@ -100,7 +100,7 @@ class CheckoutController extends Controller
                             'modifier_id' => $modifier->id,
                             'name' => $modifier->name,
                             'price' => $modifier->price,
-                            'sku' => $modifier->sku ?? null,
+                            'sku' => $modifier->sku,
                         ];
                     }
 
