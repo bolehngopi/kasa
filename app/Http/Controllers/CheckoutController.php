@@ -59,7 +59,6 @@ class CheckoutController extends Controller
                 'tax_amount' => 0,
                 'discount_amount' => 0,
                 'final_amount' => 0,
-                'order_number' => 'ORD-' . date('Ymd') . strtoupper(uniqid()),
             ]);
 
             $totalAmount = 0;

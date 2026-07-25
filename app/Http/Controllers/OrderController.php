@@ -48,7 +48,6 @@ class OrderController extends Controller
                 'status' => OrderStatus::PENDING,
                 'total_amount' => 0,
                 'notes' => $validatedData['notes'] ?? null,
-                'order_number' => 'ORD-' . strtoupper(uniqid()),
             ]);
 
             $totalAmount = 0;
