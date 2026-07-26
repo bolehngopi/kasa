@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Modifier;
 use App\Models\Order;
 use App\Models\Product;
@@ -47,11 +48,10 @@ class CheckoutController extends Controller
                 ->get()
                 ->keyBy('id');
 
-            $fullName = trim(($validate['customer_name'] ?? '') . ' ' . ($validate['customer_last_name'] ?? ''));
-
             $order = Order::create([
                 'customer_id' => $validate['customer_id'] ?? null,
-                'customer_name' => $fullName ?: null,
+                'customer_name' => $validate['customer_name'] ?? null,
+                'customer_last_name' => $validate['customer_last_name'] ?? null,
                 'customer_email' => $validate['customer_email'] ?? null,
                 'customer_phone' => $validate['customer_phone'] ?? null,
                 'status' => OrderStatus::PENDING,
@@ -119,7 +119,7 @@ class CheckoutController extends Controller
             $order->payments()->create([
                 'payment_method' => $validate['payment_method'],
                 'amount' => $totalAmount,
-                'status' => 'PENDING'
+                'status' => PaymentStatus::ACTIVE
             ]);
 
             return $order;
@@ -140,7 +140,7 @@ class CheckoutController extends Controller
         ])['products'];
 
         $totalAmount = 0;
-        $calculatedProducts = []; // FIX: Use this array to hold all cart items
+        $calculatedProducts = [];
 
         foreach ($orderProducts as $item) {
             $productModel = Product::findOrFail($item['id']);
@@ -149,18 +149,15 @@ class CheckoutController extends Controller
 
             if (isset($item['modifiers']) && \is_array($item['modifiers'])) {
                 foreach ($item['modifiers'] as $modifierId) {
-                    // Assuming your Product model has a modifiers relationship
                     $modifier = $productModel->modifiers()->findOrFail($modifierId);
                     $productTotal += (float) $modifier->price;
 
-                    // FIX: Append each modifier to an array instead of overwriting it
                     $appliedModifiers[] = $modifier->toArray();
                 }
             }
 
             $totalAmount += $productTotal * (int) $item['quantity'];
 
-            // FIX: Transform data and push this item into the final list
             $productData = $productModel->toArray();
             $productData['modifiers'] = $appliedModifiers;
             $productData['quantity'] = (int) $item['quantity'];
@@ -169,7 +166,7 @@ class CheckoutController extends Controller
         }
 
         return response()->json([
-            'products' => $calculatedProducts, // Returns ALL items correctly
+            'products' => $calculatedProducts,
             'subtotal' => (float) number_format($totalAmount, 2),
         ]);
     }

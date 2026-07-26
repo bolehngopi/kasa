@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Override;
 
-#[Fillable(['staff_id', 'customer_id', 'order_number', 'customer_name', 'customer_email', 'customer_phone', 'status', 'notes', 'total_amount', 'tax_amount', 'discount_amount', 'final_amount'])]
+#[Fillable(['staff_id', 'customer_id', 'order_number', 'customer_name', 'customer_last_name', 'customer_email', 'customer_phone', 'status', 'notes', 'total_amount', 'tax_amount', 'discount_amount', 'final_amount'])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */

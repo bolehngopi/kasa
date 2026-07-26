@@ -37,6 +37,21 @@ class Product extends Model
     }
 
     /**
+     * Get the modifiers associated with this product through its modifier groups.
+     */
+    public function modifiers()
+    {
+        return $this->hasManyThrough(
+            Modifier::class,
+            ProductModifierGroup::class,
+            'product_id',
+            'modifier_group_id',
+            'id',
+            'modifier_group_id'
+        );
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
