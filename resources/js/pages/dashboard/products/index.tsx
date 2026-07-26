@@ -60,7 +60,7 @@ export default function Products({ products }: { products: PaginatedProduct }) {
                                         {product.description}
                                     </p>
                                     <p className="mt-2 font-bold">
-                                        {product.price.toFixed(2)}
+                                        {product.price}
                                     </p>
                                 </li>
                             ))}

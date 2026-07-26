@@ -10,10 +10,10 @@ export default function OrderShow({ order }: { order: Order }) {
                 <strong>Order Number:</strong> {order.order_number}
             </p>
             <p>
-                <strong>Customer:</strong> {order.customer.name}
+                <strong>Customer:</strong> {order.customer?.name}
             </p>
             <p>
-                <strong>Staff:</strong> {order.staff.name}
+                <strong>Staff:</strong> {order.staff?.name}
             </p>
             <p>
                 <strong>Status:</strong> {order.status}

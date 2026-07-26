@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import type { Order, PaginatedOrder } from '@/types';
 
 export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
@@ -26,9 +26,6 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                                     Order Number
                                 </th>
                                 <th className="border border-gray-300 p-2 text-left">
-                                    Customer
-                                </th>
-                                <th className="border border-gray-300 p-2 text-left">
                                     Staff
                                 </th>
                                 <th className="border border-gray-300 p-2 text-left">
@@ -43,19 +40,28 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                             {orders.data.map((order: Order) => (
                                 <tr key={order.id}>
                                     <td className="border border-gray-300 p-2">
-                                        {order.order_number}
+                                        <Link
+                                            href={`/dashboard/orders/${order.id}`}
+                                            className="underline hover:no-underline"
+                                        >
+                                            {order.order_number}
+                                        </Link>
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                        {order.customer.name}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                        {order.staff.name}
+                                        <Link
+                                            href={`/dashboard/users/${order.staff?.id}`}
+                                            className="underline hover:no-underline"
+                                        >
+                                            {order.staff?.name}
+                                        </Link>
                                     </td>
                                     <td className="border border-gray-300 p-2">
                                         {order.total_amount}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                        {order.created_at}
+                                        {new Date(
+                                            order.created_at,
+                                        ).toLocaleDateString()}
                                     </td>
                                 </tr>
                             ))}
