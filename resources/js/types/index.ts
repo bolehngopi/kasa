@@ -20,6 +20,11 @@ export interface Paginated {
     last_page: number;
     per_page: number;
     total: number;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
 }
 
 export interface PaginatedCategory extends Paginated {
@@ -91,6 +96,7 @@ export interface Order {
     discount_amount: number;
     final_amount: number;
     status: string;
+    payments?: Payment[];
     created_at: string;
     updated_at: string;
 }
@@ -108,4 +114,13 @@ export interface StoreOrderRequest {
             quantity: number;
         }[];
     }[];
+}
+
+export interface Payment {
+    order: Order;
+    payment_method: string;
+    amount: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
 }
