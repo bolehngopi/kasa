@@ -35,7 +35,9 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                 <div
                     className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
-                />
+                >
+                    -
+                </div>
             )}
 
             <aside

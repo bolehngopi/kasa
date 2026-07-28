@@ -79,7 +79,7 @@ class CheckoutController extends Controller
                     'image_url' => $product->image_url,
                     'price' => $product->price,
                     'quantity' => $item['quantity'],
-                    'notes' => $item['notes'],
+                    'notes' => $item['notes'] ?? null,
                 ]);
 
                 if (!empty($item['modifiers'])) {

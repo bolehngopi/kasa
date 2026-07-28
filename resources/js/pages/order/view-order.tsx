@@ -22,25 +22,26 @@ function mapCartItemsToPayload(items: CartItem[]): CalculateTotalPayload {
         products: items.map((item) => ({
             id: item.product_id,
             quantity: item.quantity,
-            modifiers: item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
+            modifiers:
+                item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
         })),
     };
 }
 
 export default function ViewOrder() {
-    // Destructure set and remove to handle our editing actions
     const { items, set, remove } = useCart();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const calculation = useHttp(mapCartItemsToPayload(items));
     const [calc, setCalc] = useState<CalculateTotalResponse | null>();
 
-    // State for handling inline note editing
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [noteText, setNoteText] = useState<string>('');
 
     useEffect(() => {
         if (items.length === 0) {
+            setCalc(null);
+
             return;
         }
 
@@ -55,7 +56,7 @@ export default function ViewOrder() {
                     setCalc(data as CalculateTotalResponse);
                 },
                 onHttpException: (response) => {
-                    setError(response.data);
+                    setError(response.data as string);
                 },
             });
             setLoading(false);
@@ -64,7 +65,6 @@ export default function ViewOrder() {
         fetchTotal();
     }, [items]);
 
-    // Action to save the updated note to the Zustand store
     const handleSaveNote = (index: number) => {
         const updatedItems = [...items];
         updatedItems[index] = { ...updatedItems[index], notes: noteText };
@@ -72,157 +72,269 @@ export default function ViewOrder() {
         setEditingIndex(null);
     };
 
+    const handleUpdateQuantity = (index: number, newQuantity: number) => {
+        if (newQuantity < 1) {
+            return;
+        }
+
+        const updatedItems = [...items];
+        updatedItems[index].quantity = newQuantity;
+        set(updatedItems);
+    };
+
     return (
         <>
-            <Head title="View Order" />
+            <Head title="Review Order" />
 
-            <div className="mx-auto mt-10 max-w-2xl rounded-xl bg-white p-6 shadow-sm">
-                <div className="mb-6 flex items-center justify-between border-b pb-4">
-                    <h2 className="text-2xl font-bold text-gray-800">
-                        Your Order ({items?.length || 0})
-                    </h2>
-                </div>
-
-                {error && (
-                    <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                        {error}
-                    </div>
-                )}
-
-                {/* Items List */}
-                <div className="space-y-4">
-                    {items.length === 0 ? (
-                        <p className="py-6 text-center text-gray-500">
-                            Your cart is currently empty.
-                        </p>
-                    ) : (
-                        // Map over local ITEMS instead of calc so notes persist and items don't disappear during load
-                        items.map((cartItem: CartItem, index: number) => {
-                            // Safely grab the calculated API details for this specific item if they exist yet
-                            const calculatedItem = calc?.products?.[index];
-
-                            return (
-                                <div
-                                    key={`${cartItem.product_id}-${index}`}
-                                    className={`flex flex-col rounded-xl border bg-gray-50 p-4 transition-opacity duration-200 ${loading ? 'opacity-60' : 'opacity-100'}`}
-                                >
-                                    {/* Top Half: Product Details & Price */}
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">
-                                                {calculatedItem?.name || `Product #${cartItem.product_id}`}
-                                            </h3>
-                                            <p className="mt-1 text-sm text-gray-600">
-                                                Quantity: {cartItem.quantity}
-                                            </p>
-
-                                            {calculatedItem?.modifiers && calculatedItem.modifiers.length > 0 && (
-                                                <div className="mt-2 border-l-2 border-gray-300 pl-2">
-                                                    <p className="text-xs font-medium text-gray-500">
-                                                        Customizations Added:
-                                                    </p>
-                                                    {calculatedItem.modifiers.map((mod: BackendModifier) => (
-                                                        <p key={mod.id} className="text-xs text-gray-400">
-                                                            {mod.name}
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <span className="font-semibold text-gray-900">
-                                            {calculatedItem
-                                                ? (Number(calculatedItem.price || 0) * cartItem.quantity).toFixed(2)
-                                                : '...'
-                                            }
-                                        </span>
-                                    </div>
-
-                                    {/* Bottom Half: Notes & Actions Area */}
-                                    <div className="mt-4 border-t border-gray-200 pt-3">
-                                        {editingIndex === index ? (
-                                            <div className="flex flex-col gap-3">
-                                                <textarea
-                                                    value={noteText}
-                                                    onChange={(e) => setNoteText(e.target.value)}
-                                                    placeholder="Add special instructions (e.g., less sugar, extra spicy)..."
-                                                    className="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    rows={2}
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => setEditingIndex(null)}
-                                                        className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 transition"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleSaveNote(index)}
-                                                        className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition"
-                                                    >
-                                                        Save Note
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="text-sm text-gray-600 flex-1">
-                                                    {cartItem.notes ? (
-                                                        <p><span className="font-semibold text-gray-700">Note:</span> {cartItem.notes}</p>
-                                                    ) : (
-                                                        <p className="italic text-gray-400">No notes added.</p>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-3 shrink-0">
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingIndex(index);
-                                                            setNoteText(cartItem.notes || '');
-                                                        }}
-                                                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                                                    >
-                                                        {cartItem.notes ? 'Edit Note' : 'Add Note'}
-                                                    </button>
-                                                    <span className="text-gray-300">|</span>
-                                                    <button
-                                                        onClick={() => remove(index)}
-                                                        className="text-sm font-medium text-red-600 hover:text-red-800"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-
-                {/* Summary Totals Block */}
-                {loading && (
-                    <p className="mt-4 animate-pulse text-sm text-gray-400 text-right">
-                        Recalculating items...
-                    </p>
-                )}
-
-                {items.length > 0 && calc && !loading && (
-                    <div className="mt-8 space-y-3 border-t pt-4">
-                        <div className="flex justify-between text-xl font-bold text-gray-900">
-                            <span>Subtotal</span>
-                            <span>{calc.subtotal}</span>
+            <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+                <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/order"
+                                className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 transition hover:bg-gray-100"
+                            >
+                                &larr;
+                            </Link>
+                            <h2 className="text-2xl font-black text-gray-900">
+                                Review Order
+                            </h2>
                         </div>
+                        <div className="rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-bold text-blue-800">
+                            {items.length}{' '}
+                            {items.length === 1 ? 'Item' : 'Items'}
+                        </div>
+                    </div>
 
-                        <div className="flex justify-end pt-4">
+                    {error && (
+                        <div className="m-6 rounded-lg border-2 border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+                            Error: {error}
+                        </div>
+                    )}
+
+                    {/* Cart Items List */}
+                    <div className="p-6">
+                        {items.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                                    <svg
+                                        className="h-8 w-8 text-gray-400"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                                        />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    Cart is empty
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Go back and add some items to the order.
+                                </p>
+                            </div>
+                        ) : (
+                            <div
+                                className={`space-y-4 transition-opacity duration-200 ${loading ? 'pointer-events-none opacity-50' : 'opacity-100'}`}
+                            >
+                                {items.map(
+                                    (cartItem: CartItem, index: number) => {
+                                        const calculatedItem =
+                                            calc?.products?.[index];
+
+                                        return (
+                                            <div
+                                                key={`${cartItem.product_id}-${index}`}
+                                                className="flex flex-col rounded-xl border-2 border-gray-100 bg-white p-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-4">
+                                                    {/* Left: Item Info */}
+                                                    <div className="flex-1">
+                                                        <h3 className="text-lg font-bold text-gray-900">
+                                                            {calculatedItem?.name ||
+                                                                `Loading Item...`}
+                                                        </h3>
+
+                                                        {calculatedItem?.modifiers &&
+                                                            calculatedItem
+                                                                .modifiers
+                                                                .length > 0 && (
+                                                                <div className="mt-1 flex flex-wrap gap-2">
+                                                                    {calculatedItem.modifiers.map(
+                                                                        (
+                                                                            mod: BackendModifier,
+                                                                        ) => (
+                                                                            <span
+                                                                                key={
+                                                                                    mod.id
+                                                                                }
+                                                                                className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
+                                                                            >
+                                                                                +{' '}
+                                                                                {
+                                                                                    mod.name
+                                                                                }
+                                                                            </span>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                        {cartItem.notes &&
+                                                            editingIndex !==
+                                                                index && (
+                                                                <div className="mt-2 inline-block rounded border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-sm font-medium text-yellow-800">
+                                                                    Note:{' '}
+                                                                    {
+                                                                        cartItem.notes
+                                                                    }
+                                                                </div>
+                                                            )}
+                                                    </div>
+
+                                                    <div className="flex shrink-0 flex-col items-end gap-3">
+                                                        <span className="text-xl font-black text-blue-700">
+                                                            {calculatedItem
+                                                                ? `$${(Number(calculatedItem.price || 0) * cartItem.quantity).toFixed(2)}`
+                                                                : '...'}
+                                                        </span>
+
+                                                        <div className="flex h-10 w-28 items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-1">
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleUpdateQuantity(
+                                                                        index,
+                                                                        cartItem.quantity -
+                                                                            1,
+                                                                    )
+                                                                }
+                                                                className="flex h-8 w-8 items-center justify-center rounded font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                                                            >
+                                                                &minus;
+                                                            </button>
+                                                            <span className="font-bold text-gray-900">
+                                                                {
+                                                                    cartItem.quantity
+                                                                }
+                                                            </span>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleUpdateQuantity(
+                                                                        index,
+                                                                        cartItem.quantity +
+                                                                            1,
+                                                                    )
+                                                                }
+                                                                className="flex h-8 w-8 items-center justify-center rounded font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {editingIndex === index && (
+                                                    <div className="mt-4 border-t border-gray-100 pt-3">
+                                                        <textarea
+                                                            value={noteText}
+                                                            onChange={(e) =>
+                                                                setNoteText(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Add special instructions..."
+                                                            className="w-full rounded-lg border-2 border-gray-200 bg-gray-50 p-3 text-sm font-medium focus:border-blue-600 focus:bg-white focus:outline-none"
+                                                            rows={2}
+                                                        />
+                                                        <div className="mt-2 flex justify-end gap-2">
+                                                            <button
+                                                                onClick={() =>
+                                                                    setEditingIndex(
+                                                                        null,
+                                                                    )
+                                                                }
+                                                                className="rounded-lg px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleSaveNote(
+                                                                        index,
+                                                                    )
+                                                                }
+                                                                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-gray-800"
+                                                            >
+                                                                Save Note
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {editingIndex !== index && (
+                                                    <div className="mt-3 flex items-center gap-4 border-t border-gray-100 pt-3">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingIndex(
+                                                                    index,
+                                                                );
+                                                                setNoteText(
+                                                                    cartItem.notes ||
+                                                                        '',
+                                                                );
+                                                            }}
+                                                            className="text-sm font-bold text-blue-600 hover:text-blue-800"
+                                                        >
+                                                            {cartItem.notes
+                                                                ? 'Edit Note'
+                                                                : '+ Add Note'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                remove(index)
+                                                            }
+                                                            className="text-sm font-bold text-red-600 hover:text-red-800"
+                                                        >
+                                                            Remove Item
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    },
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {items.length > 0 && (
+                        <div className="border-t border-gray-200 bg-gray-50 p-6">
+                            <div className="mb-4 flex items-center justify-between text-xl">
+                                <span className="font-bold text-gray-700">
+                                    Total Amount
+                                </span>
+                                <span className="text-3xl font-black text-gray-900">
+                                    {calc
+                                        ? `$${Number(calc.subtotal).toFixed(2)}`
+                                        : '...'}
+                                </span>
+                            </div>
+
                             <Link
                                 href={checkout.url()}
-                                className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+                                className={`flex w-full items-center justify-center rounded-xl bg-blue-600 py-4 text-lg font-black text-white transition hover:bg-blue-700 active:bg-blue-800 ${loading ? 'pointer-events-none opacity-50' : ''}`}
                             >
-                                Proceed to Checkout
+                                Proceed to Payment &rarr;
                             </Link>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </>
     );
