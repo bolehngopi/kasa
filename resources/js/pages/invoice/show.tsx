@@ -30,7 +30,7 @@ export default function InvoiceShow({ order }: { order: Order }) {
         <>
             <Head title={`Order ${order.order_number}`} />
 
-            <div className="min-h-screen bg-gray-50 pb-20 pt-8">
+            <div className="pb-20 pt-8">
                 <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                     {/* Back Link */}
                     <div className="mb-4">

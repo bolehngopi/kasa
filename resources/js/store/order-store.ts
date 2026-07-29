@@ -8,35 +8,15 @@ interface OrderState {
     clearOrders: () => void;
 }
 
-// Migration helper to pull any old orders saved under 'orders' key
-function getMigratedInitialOrders(): string[] {
-    try {
-        const oldOrdersRaw = localStorage.getItem('orders');
-        if (oldOrdersRaw) {
-            const parsed = JSON.parse(oldOrdersRaw);
-            if (Array.isArray(parsed?.state?.orderNumbers)) {
-                return parsed.state.orderNumbers;
-            }
-            if (Array.isArray(parsed)) {
-                return parsed;
-            }
-        }
-    } catch {
-        // ignore parse error
-    }
-    return [];
-}
-
-const initialLegacyOrders = getMigratedInitialOrders();
-
 export const useOrderStore = create<OrderState>()(
     persist(
         (set) => ({
-            orderNumbers: initialLegacyOrders,
+            orderNumbers: [],
 
             addOrder: (orderNumber: string) =>
                 set((state) => {
                     const cleaned = orderNumber?.trim();
+
                     if (!cleaned || state.orderNumbers.includes(cleaned)) {
                         return state;
                     }
@@ -56,4 +36,3 @@ export const useOrderStore = create<OrderState>()(
         }
     )
 );
-

@@ -86,7 +86,7 @@ export default function ViewOrder() {
         <>
             <Head title="Review Order" />
 
-            <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+            <div className="p-4 sm:p-6 lg:p-8">
                 <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
                         <div className="flex items-center gap-4">

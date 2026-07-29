@@ -12,7 +12,7 @@ export default function InvoiceList({
     const { auth } = usePage().props as { auth?: { user?: any } };
     const isGuest = !auth?.user;
 
-    const { orderNumbers, removeOrder, clearOrders } = useOrderStore();
+    const { orderNumbers, removeOrder } = useOrderStore();
     const [guestOrders, setGuestOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -55,15 +55,6 @@ export default function InvoiceList({
         );
     };
 
-    const handleClearAll = () => {
-        if (
-            confirm('Are you sure you want to clear your local order history?')
-        ) {
-            clearOrders();
-            setGuestOrders([]);
-        }
-    };
-
     const displayOrders = isGuest ? guestOrders : authOrders;
 
     const statusColors: Record<string, string> = {
@@ -76,7 +67,7 @@ export default function InvoiceList({
     return (
         <>
             <Head title="Order History" />
-            <div className="min-h-screen bg-gray-50 pt-8 pb-20">
+            <div className="pt-8 pb-20">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6">
                     {/* Navigation / Header */}
                     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -90,32 +81,10 @@ export default function InvoiceList({
                                     : 'Your complete purchase history.'}
                             </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/order"
-                                className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 active:bg-blue-800"
-                            >
-                                + New Order
-                            </Link>
-                        </div>
                     </div>
 
                     {/* Order List */}
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-gray-900">
-                                Recent Orders ({displayOrders.length})
-                            </h2>
-                            {isGuest && displayOrders.length > 0 && (
-                                <button
-                                    onClick={handleClearAll}
-                                    className="text-xs font-bold text-red-600 hover:text-red-800"
-                                >
-                                    Clear Local History
-                                </button>
-                            )}
-                        </div>
-
                         {isLoading ? (
                             <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
                                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
