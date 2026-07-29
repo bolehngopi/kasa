@@ -86,9 +86,14 @@ export interface ProductOrder extends Product {
 
 export interface Order {
     id: number;
-    staff: User;
-    customer: User;
+    staff?: User;
+    customer?: User;
     order_number: string;
+    queue_number?: number;
+    customer_name?: string;
+    customer_last_name?: string;
+    customer_email?: string;
+    customer_phone?: string;
     products: ProductOrder[];
     notes?: string;
     total_amount: number;

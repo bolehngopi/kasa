@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
-use App\Models\Modifier;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -66,7 +65,7 @@ class CheckoutController extends Controller
             foreach ($validate['cart'] as $item) {
                 $product = $products->get($item['product_id']);
 
-                if (!$product) {
+                if (! $product) {
                     throw (new ModelNotFoundException)->setModel(Product::class, $item['product_id']);
                 }
 
@@ -82,14 +81,14 @@ class CheckoutController extends Controller
                     'notes' => $item['notes'] ?? null,
                 ]);
 
-                if (!empty($item['modifiers'])) {
+                if (! empty($item['modifiers'])) {
                     $modifiersToInsert = [];
                     $availableModifiers = $product->modifierGroups->flatMap->modifiers;
 
                     foreach ($item['modifiers'] as $modifierData) {
                         $modifier = $availableModifiers->firstWhere('id', $modifierData['modifier_id']);
 
-                        if (!$modifier) {
+                        if (! $modifier) {
                             throw new \Exception("Modifier ID {$modifierData['modifier_id']} not found or not assigned to product {$product->id}");
                         }
 
@@ -103,7 +102,7 @@ class CheckoutController extends Controller
                         ];
                     }
 
-                    if (!empty($modifiersToInsert)) {
+                    if (! empty($modifiersToInsert)) {
                         $orderProduct->modifiers()->createMany($modifiersToInsert);
                     }
                 }
@@ -119,14 +118,14 @@ class CheckoutController extends Controller
             $order->payments()->create([
                 'payment_method' => $validate['payment_method'],
                 'amount' => $totalAmount,
-                'status' => PaymentStatus::ACTIVE
+                'status' => PaymentStatus::ACTIVE,
             ]);
 
             return $order;
         });
 
-        return redirect()->route('orders.show', $order->id)
-            ->with('success', 'Order placed successfully!');
+        return redirect()->route('invoice.show', $order->order_number)
+            ->with('new_order_number', $order->order_number);
     }
 
     public function calculateTotal(Request $request)

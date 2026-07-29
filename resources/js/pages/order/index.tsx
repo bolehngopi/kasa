@@ -1,8 +1,9 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import Drawer from '@/components/drawer';
 import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
+import { useOrderStore } from '@/store/order-store';
 import type { CartItem } from '@/store/cart-store';
 import type { Category, PaginatedProduct, Product } from '@/types';
 
@@ -12,7 +13,8 @@ interface OrderingProps {
 }
 
 export default function Order({ products, categories }: OrderingProps) {
-    const { add: addToCart } = useCart();
+    const { items, add: addToCart } = useCart();
+    const { orderNumbers } = useOrderStore();
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
         null,
@@ -93,7 +95,30 @@ export default function Order({ products, categories }: OrderingProps) {
             <Head title="Point of Sale" />
 
             <div className="flex h-screen flex-col bg-gray-100">
-                <div className="sticky top-0 z-10 border-b border-gray-300 bg-white shadow-sm">
+                {/* Top Global Navigation Bar */}
+                <div className="sticky top-0 z-20 border-b border-gray-900 bg-gray-900 px-4 py-3 text-white">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl font-black tracking-tight text-white">Kasa POS</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Link
+                                href="/invoice"
+                                className="flex items-center gap-1.5 rounded-lg bg-gray-800 px-3.5 py-2 text-xs font-bold text-gray-200 transition hover:bg-gray-700 hover:text-white"
+                            >
+                                📋 Order History
+                                {orderNumbers.length > 0 && (
+                                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-black text-white">
+                                        {orderNumbers.length}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Categories Bar */}
+                <div className="sticky top-[53px] z-10 border-b border-gray-300 bg-white shadow-sm">
                     <div className="scrollbar-hide flex gap-2 overflow-x-auto p-3">
                         <button
                             onClick={() => handleCategoryClick()}
@@ -341,6 +366,23 @@ export default function Order({ products, categories }: OrderingProps) {
                     </>
                 )}
             </Drawer>
+
+            {items.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 z-30 w-11/12 max-w-lg -translate-x-1/2">
+                    <Link
+                        href="/order/view-order"
+                        className="flex w-full items-center justify-between rounded-2xl bg-blue-600 px-6 py-4 text-white shadow-xl transition hover:bg-blue-700 active:scale-[0.99]"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-black text-blue-600">
+                                {items.reduce((acc, item) => acc + item.quantity, 0)}
+                            </span>
+                            <span className="font-bold">Review Order</span>
+                        </div>
+                        <span className="font-bold">View Cart &rarr;</span>
+                    </Link>
+                </div>
+            )}
         </>
     );
 }
