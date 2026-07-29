@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import Drawer from '@/components/drawer';
 import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
-import { useOrderStore } from '@/store/order-store';
 import type { CartItem } from '@/store/cart-store';
 import type { Category, PaginatedProduct, Product } from '@/types';
 
@@ -14,8 +13,6 @@ interface OrderingProps {
 
 export default function Order({ products, categories }: OrderingProps) {
     const { items, add: addToCart } = useCart();
-    const { orderNumbers } = useOrderStore();
-
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
         null,
     );

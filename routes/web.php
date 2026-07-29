@@ -33,6 +33,7 @@ Route::group([
     'middleware' => ['auth'],
 ], function () {
     Route::inertia('/', 'dashboard/index')->name('dashboard');
+    Route::inertia('/settings', 'dashboard/settings')->name('dashboard.settings');
     Route::resource('/products', ProductController::class);
     Route::resource('/orders', OrderController::class);
 });
