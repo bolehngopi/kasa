@@ -32,7 +32,7 @@ export const useOrderStore = create<OrderState>()(
             clearOrders: () => set({ orderNumbers: [] }),
         }),
         {
-            name: 'kasa_guest_orders',
+            name: 'orders',
         }
     )
 );
