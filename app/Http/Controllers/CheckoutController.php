@@ -26,7 +26,7 @@ class CheckoutController extends Controller
     {
         $validate = $request->validate([
             'customer_id' => 'nullable|exists:users,id',
-            'customer_name' => 'nullable|string|max:100',
+            'customer_name' => 'required|string|max:100',
             'customer_last_name' => 'nullable|string|max:100',
             'customer_email' => 'nullable|email|max:150',
             'customer_phone' => 'nullable|string|max:50',
@@ -47,9 +47,13 @@ class CheckoutController extends Controller
                 ->get()
                 ->keyBy('id');
 
+            $customerId = request()->user()->getPermissionNames()->contains('create_orders') ? $validate['customer_id'] ?? null : request()->user()->id ?? null;
+            $staffId = request()->user()->getPermissionNames()->contains('create_orders') ? request()->user()->id : null;
+
             $order = Order::create([
-                'customer_id' => $validate['customer_id'] ?? null,
-                'customer_name' => $validate['customer_name'] ?? null,
+                'staff_id' => $staffId,
+                'customer_id' => $customerId,
+                'customer_name' => $validate['customer_name'],
                 'customer_last_name' => $validate['customer_last_name'] ?? null,
                 'customer_email' => $validate['customer_email'] ?? null,
                 'customer_phone' => $validate['customer_phone'] ?? null,

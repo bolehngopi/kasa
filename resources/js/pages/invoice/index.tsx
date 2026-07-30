@@ -142,17 +142,6 @@ export default function InvoiceList({
                                                         >
                                                             {order.order_number}
                                                         </Link>
-                                                        {order.queue_number && (
-                                                            <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">
-                                                                Queue #
-                                                                {String(
-                                                                    order.queue_number,
-                                                                ).padStart(
-                                                                    3,
-                                                                    '0',
-                                                                )}
-                                                            </span>
-                                                        )}
                                                         <span
                                                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase ${statusClass}`}
                                                         >
