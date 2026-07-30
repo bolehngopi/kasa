@@ -13,9 +13,7 @@ interface OrderingProps {
 
 export default function Order({ products, categories }: OrderingProps) {
     const { items, add: addToCart } = useCart();
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(
-        null,
-    );
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [selectedModifiers, setSelectedModifiers] = useState<number[]>([]);
     const [quantity, setQuantity] = useState<number>(1);
     const [notes, setNotes] = useState<string>('');
@@ -33,7 +31,18 @@ export default function Order({ products, categories }: OrderingProps) {
 
     const openDrawer = (product: Product) => {
         setSelectedProduct(product);
-        setSelectedModifiers([]);
+
+        // 1. Check for modifiers that have is_default === true and pre-select them
+        const defaultModifierIds: number[] = [];
+        product.modifier_groups?.forEach((group) => {
+            group.modifiers?.forEach((modifier) => {
+                if (modifier.is_default && modifier.id !== undefined) {
+                    defaultModifierIds.push(modifier.id);
+                }
+            });
+        });
+
+        setSelectedModifiers(defaultModifierIds);
         setQuantity(1);
         setNotes('');
     };
@@ -193,7 +202,7 @@ export default function Order({ products, categories }: OrderingProps) {
                                         : 'Add'}
                                 </span>
                                 <span className="text-xl">
-                                    {currentItemTotal.toFixed(2)}
+                                    ${currentItemTotal.toFixed(2)}
                                 </span>
                             </button>
                         </div>
@@ -215,18 +224,8 @@ export default function Order({ products, categories }: OrderingProps) {
                                 onClick={closeDrawer}
                                 className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white"
                             >
-                                <svg
-                                    className="h-6 w-6"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2.5}
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
@@ -244,31 +243,27 @@ export default function Order({ products, categories }: OrderingProps) {
                             {selectedProduct.modifier_groups &&
                                 selectedProduct.modifier_groups.length > 0 && (
                                     <div className="mt-8 space-y-8">
-                                        {selectedProduct.modifier_groups.map(
-                                            (group) => (
+                                        {[...selectedProduct.modifier_groups]
+                                            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                            .map((group) => (
                                                 <div key={group.id}>
                                                     <h3 className="text-lg font-bold tracking-tight text-gray-900 uppercase">
-                                                        {group.name}
+                                                        {group.name}{' '}
+                                                        {group.is_required ? (
+                                                            <span>*</span>
+                                                        ) : null}
                                                     </h3>
 
                                                     <div className="mt-3 flex flex-col gap-3">
-                                                        {group.modifiers?.map(
-                                                            (modifier) => {
-                                                                const isSelected =
-                                                                    selectedModifiers.includes(
-                                                                        modifier.id!,
-                                                                    );
+                                                        {[...(group.modifiers || [])]
+                                                            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                                            .map((modifier) => {
+                                                                const isSelected = selectedModifiers.includes(modifier.id!);
 
                                                                 return (
                                                                     <button
-                                                                        key={
-                                                                            modifier.id
-                                                                        }
-                                                                        onClick={() =>
-                                                                            toggleModifier(
-                                                                                modifier.id!,
-                                                                            )
-                                                                        }
+                                                                        key={modifier.id}
+                                                                        onClick={() => toggleModifier(modifier.id!)}
                                                                         className={`flex w-full items-center justify-between rounded-lg border-2 p-4 text-left ${
                                                                             isSelected
                                                                                 ? 'border-blue-600 bg-blue-50'
@@ -276,49 +271,32 @@ export default function Order({ products, categories }: OrderingProps) {
                                                                         }`}
                                                                     >
                                                                         <div className="flex items-center gap-3">
-                                                                            <div
-                                                                                className={`flex h-6 w-6 items-center justify-center rounded border-2 ${
-                                                                                    isSelected
-                                                                                        ? 'border-blue-600 bg-blue-600'
-                                                                                        : 'border-gray-400 bg-white'
-                                                                                }`}
-                                                                            >
+                                                                            <div className={`flex h-6 w-6 items-center justify-center rounded border-2 ${
+                                                                                isSelected
+                                                                                    ? 'border-blue-600 bg-blue-600'
+                                                                                    : 'border-gray-400 bg-white'
+                                                                            }`}>
                                                                                 {isSelected && (
-                                                                                    <svg
-                                                                                        className="h-4 w-4 text-white"
-                                                                                        viewBox="0 0 20 20"
-                                                                                        fill="currentColor"
-                                                                                    >
-                                                                                        <path
-                                                                                            fillRule="evenodd"
-                                                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                                            clipRule="evenodd"
-                                                                                        />
+                                                                                    <svg className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                                                     </svg>
                                                                                 )}
                                                                             </div>
                                                                             <span className="text-base font-bold text-gray-900">
-                                                                                {
-                                                                                    modifier.name
-                                                                                }
+                                                                                {modifier.name}
                                                                             </span>
                                                                         </div>
                                                                         <span className="text-base font-bold text-gray-600">
-                                                                            {Number(
-                                                                                modifier.price,
-                                                                            ) >
-                                                                            0
-                                                                                ? `+ ${Number(modifier.price).toFixed(2)}`
+                                                                            {Number(modifier.price) > 0
+                                                                                ? `+ $${Number(modifier.price).toFixed(2)}`
                                                                                 : 'Free'}
                                                                         </span>
                                                                     </button>
                                                                 );
-                                                            },
-                                                        )}
+                                                            })}
                                                     </div>
                                                 </div>
-                                            ),
-                                        )}
+                                            ))}
                                     </div>
                                 )}
 
@@ -339,6 +317,7 @@ export default function Order({ products, categories }: OrderingProps) {
                 )}
             </Drawer>
 
+            {/* Cart Banner remains unchanged */}
             {items.length > 0 && (
                 <div className="fixed bottom-6 left-1/2 z-30 w-11/12 max-w-lg -translate-x-1/2">
                     <Link

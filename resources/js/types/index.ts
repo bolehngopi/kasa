@@ -61,8 +61,12 @@ export interface ModifierGroup {
     name: string;
     description: string;
     is_active: boolean;
-    products?: Product[];
-    modifiers?: Modifier[];
+    is_required: boolean;
+    max_selection: number;
+    min_selection: number;
+    modifiers: Modifier[];
+    selection_type: string;
+    sort_order: number;
     created_at: string;
     updated_at: string;
 }
@@ -73,6 +77,8 @@ export interface Modifier {
     modifierGroup?: ModifierGroup;
     name: string;
     price: number;
+    sort_order: number;
+    is_default: boolean;
     is_active: boolean;
     created_at: string;
     updated_at: string;

@@ -22,4 +22,19 @@ class ModifierGroup extends Model
     {
         return $this->belongsToMany(Product::class, 'product_modifier_groups', 'modifier_group_id', 'product_id');
     }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'is_required' => 'boolean',
+            'min_selection' => 'integer',
+            'max_selection' => 'integer',
+        ];
+    }
 }

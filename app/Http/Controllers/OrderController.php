@@ -130,12 +130,21 @@ class OrderController extends Controller
 
         $product = Product::query();
 
+        $product->where('is_active', true);
+
         $product->when(!empty($selectedCat), function ($query) use ($selectedCat) {
             $query->whereIn('category_id', $selectedCat);
         });
 
         return inertia('order/index', [
-            'products' => $product->with('modifierGroups.modifiers')->paginate(10)->withQueryString(),
+            'products' => $product->with([
+                'modifierGroups' => function ($query) {
+                    $query->where('is_active', true);
+                },
+                'modifierGroups.modifiers' => function ($query) {
+                    $query->where('is_active', true);
+                }
+            ])->paginate(10)->withQueryString(),
             'categories' => Category::with('parent', 'children')->get(),
         ]);
     }

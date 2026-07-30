@@ -17,4 +17,19 @@ class Modifier extends Model
     {
         return $this->belongsTo(ModifierGroup::class);
     }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'is_default' => 'boolean',
+            'price' => 'decimal:2',
+            'sort_order' => 'integer',
+        ];
+    }
 }
