@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
+use App\Actions\CreateOrder;
+use App\Http\Requests\CalculateTotalRequest;
+use App\Http\Requests\CheckoutRequest;
 use App\Models\Order;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
+    public function __construct(protected CreateOrder $createOrder) {}
+
     public function viewOrder(Request $request)
     {
         return inertia('order/view-order');
@@ -22,155 +23,89 @@ class CheckoutController extends Controller
         return inertia('checkout');
     }
 
-    public function checkout(Request $request)
+    public function checkout(CheckoutRequest $request)
     {
-        $validate = $request->validate([
-            'customer_id' => 'nullable|exists:users,id',
-            'customer_name' => 'required|string|max:100',
-            'customer_last_name' => 'nullable|string|max:100',
-            'customer_email' => 'nullable|email|max:150',
-            'customer_phone' => 'nullable|string|max:50',
-            'payment_method' => 'required|in:cash,qris',
-            'cart' => 'required|array',
-            'cart.*.product_id' => 'required|exists:products,id',
-            'cart.*.quantity' => 'required|integer|min:1',
-            'cart.*.notes' => 'nullable|string|max:500',
-            'cart.*.modifiers' => 'nullable|array',
-            'cart.*.modifiers.*.modifier_id' => 'required|exists:modifiers,id',
-        ]);
+        $data = $request->validated();
+        $user = $request->user();
 
-        $order = DB::transaction(function () use ($validate) {
-            $productIds = collect($validate['cart'])->pluck('product_id')->unique();
+        $idempotencySessionKey = null;
 
-            $products = Product::with('modifierGroups.modifiers')
-                ->whereIn('id', $productIds)
-                ->get()
-                ->keyBy('id');
+        if (! empty($data['idempotency_key'])) {
+            $idempotencySessionKey = 'checkout.idempotency.'.sha1($data['idempotency_key']);
 
-            $customerId = request()->user()->getPermissionNames()->contains('create_orders') ? $validate['customer_id'] ?? null : request()->user()->id ?? null;
-            $staffId = request()->user()->getPermissionNames()->contains('create_orders') ? request()->user()->id : null;
+            if ($existingNumber = $request->session()->get($idempotencySessionKey)) {
+                $existing = Order::where('order_number', $existingNumber)->first();
 
-            $order = Order::create([
-                'staff_id' => $staffId,
-                'customer_id' => $customerId,
-                'customer_name' => $validate['customer_name'],
-                'customer_last_name' => $validate['customer_last_name'] ?? null,
-                'customer_email' => $validate['customer_email'] ?? null,
-                'customer_phone' => $validate['customer_phone'] ?? null,
-                'status' => OrderStatus::PENDING,
-                'total_amount' => 0,
-                'tax_amount' => 0,
-                'discount_amount' => 0,
-                'final_amount' => 0,
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($validate['cart'] as $item) {
-                $product = $products->get($item['product_id']);
-
-                if (! $product) {
-                    throw (new ModelNotFoundException)->setModel(Product::class, $item['product_id']);
+                if ($existing) {
+                    return redirect()->route('invoice.show', $existing->order_number)
+                        ->with('new_order_number', $existing->order_number);
                 }
-
-                $productTotal = (float) $product->price;
-
-                $orderProduct = $order->products()->create([
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'image_url' => $product->image_url,
-                    'price' => $product->price,
-                    'quantity' => $item['quantity'],
-                    'notes' => $item['notes'] ?? null,
-                ]);
-
-                if (! empty($item['modifiers'])) {
-                    $modifiersToInsert = [];
-                    $availableModifiers = $product->modifierGroups->flatMap->modifiers;
-
-                    foreach ($item['modifiers'] as $modifierData) {
-                        $modifier = $availableModifiers->firstWhere('id', $modifierData['modifier_id']);
-
-                        if (! $modifier) {
-                            throw new \Exception("Modifier ID {$modifierData['modifier_id']} not found or not assigned to product {$product->id}");
-                        }
-
-                        $productTotal += (float) $modifier->price;
-
-                        $modifiersToInsert[] = [
-                            'modifier_id' => $modifier->id,
-                            'name' => $modifier->name,
-                            'price' => $modifier->price,
-                            'sku' => $modifier->sku,
-                        ];
-                    }
-
-                    if (! empty($modifiersToInsert)) {
-                        $orderProduct->modifiers()->createMany($modifiersToInsert);
-                    }
-                }
-
-                $totalAmount += $productTotal * $item['quantity'];
             }
+        }
 
-            $order->update([
-                'total_amount' => $totalAmount,
-                'final_amount' => $totalAmount,
-            ]);
+        $order = $this->createOrder->handle($data, $user);
 
-            $order->payments()->create([
-                'payment_method' => $validate['payment_method'],
-                'amount' => $totalAmount,
-                'status' => PaymentStatus::ACTIVE,
-            ]);
-
-            return $order;
-        });
+        if ($idempotencySessionKey) {
+            $request->session()->put($idempotencySessionKey, $order->order_number);
+        }
 
         return redirect()->route('invoice.show', $order->order_number)
             ->with('new_order_number', $order->order_number);
     }
 
-    public function calculateTotal(Request $request)
+    public function calculateTotal(CalculateTotalRequest $request)
     {
-        $orderProducts = $request->validate([
-            'products' => 'required|array',
-            'products.*.id' => 'required|exists:products,id',
-            'products.*.quantity' => 'required|integer|min:1',
-            'products.*.modifiers' => 'nullable|array',
-            'products.*.modifiers.*' => 'exists:modifiers,id',
-        ])['products'];
+        $items = $request->validated()['products'];
 
-        $totalAmount = 0;
+        $productIds = collect($items)->pluck('id')->unique();
+
+        $products = Product::with('modifierGroups.modifiers')
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
+
+        $total = '0.00';
         $calculatedProducts = [];
 
-        foreach ($orderProducts as $item) {
-            $productModel = Product::findOrFail($item['id']);
-            $productTotal = (float) $productModel->price;
+        foreach ($items as $item) {
+            $product = $products->get($item['id']);
+
+            $unitPrice = (string) $product->price;
             $appliedModifiers = [];
 
-            if (isset($item['modifiers']) && \is_array($item['modifiers'])) {
-                foreach ($item['modifiers'] as $modifierId) {
-                    $modifier = $productModel->modifiers()->findOrFail($modifierId);
-                    $productTotal += (float) $modifier->price;
+            foreach ($item['modifiers'] ?? [] as $modifierId) {
+                $modifier = $product->modifierGroups
+                    ->flatMap(fn ($group) => $group->modifiers)
+                    ->firstWhere('id', $modifierId);
 
-                    $appliedModifiers[] = $modifier->toArray();
-                }
+                abort_unless((bool) $modifier, 422, 'Modifier is not valid for this product.');
+
+                $unitPrice = bcadd($unitPrice, (string) $modifier->price, 2);
+
+                $appliedModifiers[] = [
+                    'id' => $modifier->id,
+                    'name' => $modifier->name,
+                    'price' => $modifier->price,
+                    'sku' => $modifier->sku,
+                ];
             }
 
-            $totalAmount += $productTotal * (int) $item['quantity'];
+            $total = bcadd($total, bcmul($unitPrice, (string) $item['quantity'], 2), 2);
 
-            $productData = $productModel->toArray();
-            $productData['modifiers'] = $appliedModifiers;
-            $productData['quantity'] = (int) $item['quantity'];
-
-            $calculatedProducts[] = $productData;
+            $calculatedProducts[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'image_url' => $product->image_url,
+                'price' => $product->price,
+                'quantity' => (int) $item['quantity'],
+                'modifiers' => $appliedModifiers,
+            ];
         }
 
         return response()->json([
             'products' => $calculatedProducts,
-            'subtotal' => (float) number_format($totalAmount, 2),
-        ]);
+            'subtotal' => (float) $total,
+        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 }

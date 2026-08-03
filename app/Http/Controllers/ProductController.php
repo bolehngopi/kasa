@@ -5,44 +5,49 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
+use App\Models\ModifierGroup;
 use App\Models\Product;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class ProductController extends Controller
 {
+    protected function authorizeManageProducts(): void
+    {
+        if (! Auth::user()?->can('manage_products')) {
+            throw new AuthorizationException;
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->authorizeManageProducts();
+
         $search = request()->query('search');
-        $perPage = request()->query('per_page', 10);
-        $page = request()->query('page', 1);
+        $perPage = min(max((int) request()->query('per_page', 10), 1), 100);
+        $page = max((int) request()->query('page', 1), 1);
         $cat = request()->query('category');
 
         $query = Product::query();
 
-        $query->when($search, function ($query, $search) {
-            $query->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
+        $query->when($search, function ($q) use ($search) {
+            $q->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             });
         });
 
-        $query->when($cat, function ($query, $cat) {
-            $query->where('category_id', $cat);
-        });
-
-        $data = $query->paginate($perPage, ['*'], 'page', $page);
-
-        $categories = Category::all();
+        $query->when($cat, fn ($q) => $q->where('category_id', $cat));
 
         return Inertia::render('dashboard/products/index', [
-            'products' => $data,
-            'categories' => $categories,
+            'products' => $query->paginate($perPage, ['*'], 'page', $page),
+            'categories' => Category::all(['id', 'name']),
         ]);
     }
 
@@ -51,10 +56,10 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Category::all();
+        $this->authorizeManageProducts();
 
         return Inertia::render('dashboard/products/create', [
-            'categories' => $categories,
+            'categories' => Category::all(['id', 'name']),
         ]);
     }
 
@@ -63,34 +68,23 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        $validated = $request->safe();
+        $this->authorizeManageProducts();
+
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->storeAs(
+            $validated['image_url'] = $request->file('image')->storeAs(
                 'products',
                 uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
-            $validated->merge(['image_url' => $path]);
         }
 
-        $validated['slug'] = Str::slug($validated['name']);
+        $product = Auth::user()->products()->create(
+            collect($validated)->except('modifier_groups')->all()
+        );
 
-        $product = Auth::user()->products()->create($validated->except('modifier_groups'));
-
-        // Create modifier groups and modifiers if provided
-        if (isset($validated['modifier_groups'])) {
-            foreach ($validated['modifier_groups'] as $groupData) {
-                $modifiers = $groupData['modifiers'] ?? [];
-                unset($groupData['modifiers']);
-                $modifierGroup = $product->modifierGroups()->create($groupData);
-
-                // Create modifiers for the group
-                foreach ($modifiers as $modifierData) {
-                    $modifierGroup->modifiers()->create($modifierData);
-                }
-            }
-        }
+        $this->syncModifierGroups($product, $validated['modifier_groups'] ?? []);
 
         return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
@@ -100,8 +94,10 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        $this->authorizeManageProducts();
+
         return Inertia::render('dashboard/products/show', [
-            'product' => $product->load('category', 'modifierGroups', 'creator', 'modifierGroups.modifiers'),
+            'product' => $product->load('category', 'creator', 'modifierGroups.modifiers'),
         ]);
     }
 
@@ -110,38 +106,27 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        $validated = $request->safe();
+        $this->authorizeManageProducts();
+
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
-            // Delete old image if exists
             if ($product->image_url) {
-                $oldPath = str_replace('/storage/', '', $product->image_url);
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete($product->image_url);
             }
 
-            $path = $request->file('image')->storeAs(
+            $validated['image_url'] = $request->file('image')->storeAs(
                 'products',
                 uniqid().'.'.$request->file('image')->getClientOriginalExtension(),
                 'public'
             );
-            $validated->merge(['image_url' => $path]);
         }
 
-        $product->update($validated);
+        $product->update(
+            collect($validated)->except('modifier_groups')->all()
+        );
 
-        // Update modifier groups and modifiers if provided
-        if (isset($request['modifier_groups'])) {
-            foreach ($request['modifier_groups'] as $groupData) {
-                $modifiers = $groupData['modifiers'] ?? [];
-                unset($groupData['modifiers']);
-                $modifierGroup = $product->modifierGroups()->updateOrCreate(['id' => $groupData['id'] ?? null], $groupData);
-
-                // Update modifiers for the group
-                foreach ($modifiers as $modifierData) {
-                    $modifierGroup->modifiers()->updateOrCreate(['id' => $modifierData['id'] ?? null], $modifierData);
-                }
-            }
-        }
+        $this->syncModifierGroups($product, $validated['modifier_groups'] ?? []);
 
         return redirect()->route('products.show', $product)->with('success', 'Product '.$product->name.' updated successfully.');
     }
@@ -151,13 +136,61 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // Delete image if exists
-        if (! empty($product->image_url)) {
-            Storage::disk('public')->delete([$product->image_url]);
-        }
+        $this->authorizeManageProducts();
 
-        Product::destroy($product->id);
+        $product->delete();
 
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    /**
+     * Create/update/detach modifier groups from VALIDATED input.
+     */
+    protected function syncModifierGroups(Product $product, array $groups): void
+    {
+        $keepGroupIds = [];
+
+        foreach ($groups as $groupData) {
+            $modifiers = $groupData['modifiers'] ?? [];
+            unset($groupData['modifiers']);
+
+            $group = $product->modifierGroups()->updateOrCreate(
+                ['id' => $groupData['id'] ?? null],
+                $groupData
+            );
+
+            $keepGroupIds[] = $group->id;
+
+            $keepModifierIds = [];
+
+            foreach ($modifiers as $modifierData) {
+                $modifier = $group->modifiers()->updateOrCreate(
+                    ['id' => $modifierData['id'] ?? null],
+                    $modifierData
+                );
+
+                $keepModifierIds[] = $modifier->id;
+            }
+
+            $group->modifiers()->whereNotIn('id', $keepModifierIds)->delete();
+        }
+
+        $detached = $product->modifierGroups()
+            ->whereNotIn('modifier_groups.id', $keepGroupIds)
+            ->pluck('modifier_groups.id');
+
+        $product->modifierGroups()->detach($detached);
+
+        foreach ($detached as $groupId) {
+            $stillUsed = DB::table('product_modifier_groups')
+                ->where('modifier_group_id', $groupId)
+                ->exists();
+
+            if (! $stillUsed) {
+                $group = ModifierGroup::find($groupId);
+                $group?->modifiers()->delete();
+                $group?->delete();
+            }
+        }
     }
 }

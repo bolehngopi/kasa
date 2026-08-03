@@ -37,60 +37,64 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(StoreOrderRequest $request)
-    // {
-    //     $validatedData = $request->validated();
+    public function store(StoreOrderRequest $request)
+    {
+        $validatedData = $request->validated();
 
-    //     $order = DB::transaction(function () use ($validatedData) {
-    //         $order = Order::create([
-    //             'staff_id' => $validatedData['staff_id'],
-    //             'customer_id' => $validatedData['customer_id'],
-    //             'status' => OrderStatus::PENDING,
-    //             'total_amount' => 0,
-    //             'notes' => $validatedData['notes'] ?? null,
-    //         ]);
+        $order = DB::transaction(function () use ($validatedData) {
+            $order = Order::create([
+                'staff_id' => $validatedData['staff_id'],
+                'customer_id' => $validatedData['customer_id'] ?? null,
+                'status' => OrderStatus::PENDING,
+                'total_amount' => 0,
+                'final_amount' => 0,
+                'notes' => $validatedData['notes'] ?? null,
+            ]);
 
-    //         $totalAmount = 0;
+            $totalAmount = 0.0;
 
-    //         foreach ($validatedData['order_products'] as $item) {
-    //             $product = Product::findOrFail($item['product_id']);
-    //             $productTotal = (float) $product->price;
+            foreach ($validatedData['order_products'] as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                $productTotal = (float) $product->price;
 
-    //             $orderProduct = $order->products()->create([
-    //                 'product_id' => $product->id,
-    //                 'name' => $product->name,
-    //                 'sku' => $product->sku,
-    //                 'image_url' => $product->image_url,
-    //                 'price' => $product->price,
-    //                 'quantity' => $item['quantity'],
-    //                 'notes' => $item['note'] ?? null,
-    //             ]);
+                $orderProduct = $order->products()->create([
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'image_url' => $product->image_url,
+                    'price' => $product->price,
+                    'quantity' => $item['quantity'],
+                    'notes' => $item['note'] ?? null,
+                ]);
 
-    //             if (!empty($item['modifiers'])) {
-    //                 foreach ($item['modifiers'] as $modifierData) {
-    //                     $modifier = Modifier::findOrFail($modifierData['modifier_id']);
+                if (! empty($item['modifiers'])) {
+                    foreach ($item['modifiers'] as $modifierData) {
+                        $modifier = Modifier::findOrFail($modifierData['modifier_id']);
 
-    //                     $productTotal += (float) $modifier->price;
+                        $productTotal += (float) $modifier->price;
 
-    //                     $orderProduct->modifiers()->create([
-    //                         'modifier_id' => $modifier->id,
-    //                         'name' => $modifier->name,
-    //                         'price' => $modifier->price,
-    //                         'sku' => $modifier->sku,
-    //                     ]);
-    //                 }
-    //             }
+                        $orderProduct->modifiers()->create([
+                            'modifier_id' => $modifier->id,
+                            'name' => $modifier->name,
+                            'price' => $modifier->price,
+                            'sku' => $modifier->sku,
+                        ]);
+                    }
+                }
 
-    //             $totalAmount += $productTotal * $item['quantity'];
-    //         }
+                $totalAmount += $productTotal * $item['quantity'];
+            }
 
-    //         $order->update(['total_amount' => $totalAmount]);
+            $order->update([
+                'total_amount' => $totalAmount,
+                'final_amount' => $totalAmount,
+            ]);
 
-    //         return $order->load('products.modifiers');
-    //     });
+            return $order->load('products.modifiers');
+        });
 
-    //     return redirect()->route('orders.show', $order)->with('success', 'Order created successfully.');
-    // }
+        return redirect()->route('orders.show', $order)->with('success', 'Order created successfully.');
+    }
 
     /**
      * Display the specified resource.
@@ -132,7 +136,7 @@ class OrderController extends Controller
 
         $product->where('is_active', true);
 
-        $product->when(!empty($selectedCat), function ($query) use ($selectedCat) {
+        $product->when(! empty($selectedCat), function ($query) use ($selectedCat) {
             $query->whereIn('category_id', $selectedCat);
         });
 
@@ -143,7 +147,7 @@ class OrderController extends Controller
                 },
                 'modifierGroups.modifiers' => function ($query) {
                     $query->where('is_active', true);
-                }
+                },
             ])->paginate(10)->withQueryString(),
             'categories' => Category::with('parent', 'children')->get(),
         ]);

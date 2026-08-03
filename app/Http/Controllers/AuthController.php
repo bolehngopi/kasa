@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
@@ -26,11 +29,24 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        $key = $this->throttleKey($request);
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return back()->withErrors([
+                'email' => "Too many login attempts. Please try again in {$seconds} seconds.",
+            ]);
+        }
+
         if (Auth::attempt($credentials)) {
+            RateLimiter::clear($key);
             $request->session()->regenerate();
 
-            return redirect()->intended('/');
+            return redirect()->intended(route('dashboard'));
         }
+
+        RateLimiter::hit($key);
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
@@ -45,15 +61,13 @@ class AuthController extends Controller
             'password' => Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
         ]);
 
-        $user = \App\Models\User::create($request->only(['name', 'email', 'password']));
+        $user = User::create($request->only(['name', 'email', 'password']));
 
-        if (Auth::login($user)) {
-            return redirect()->intended('/');
-        }
+        Auth::login($user);
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ]);
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request)
@@ -64,5 +78,12 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    protected function throttleKey(Request $request): string
+    {
+        return Str::transliterate(
+            Str::lower($request->input('email', '')).'|'.$request->ip()
+        );
     }
 }
