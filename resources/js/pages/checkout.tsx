@@ -76,12 +76,16 @@ export default function Checkout() {
         transform((currentData) => ({
             ...currentData,
             cart: items,
+            idempotency_key: crypto.randomUUID(),
         }));
 
         post(storeCheckout.url(), {
             onSuccess: (page: any) => {
                 clear();
-                const newOrderNum = page?.props?.flash?.new_order_number || page?.props?.new_order_number;
+                const newOrderNum =
+                    page?.props?.flash?.new_order_number ||
+                    page?.props?.new_order_number;
+
                 if (newOrderNum && !auth?.user) {
                     addOrder(newOrderNum);
                 }
@@ -259,7 +263,6 @@ export default function Checkout() {
 
                             <button
                                 type="submit"
-                                // Also disable button while `processing` is true so they don't double click
                                 className="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3.5 text-lg font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={
                                     items.length === 0 ||

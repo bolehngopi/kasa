@@ -24,3 +24,14 @@ export function formatDate(date: string | Date): string {
         day: 'numeric'
     }).format(new Date(date));
 }
+
+export function formatCurrency(amount: number | string): string {
+    const value = typeof amount === "string" ? Number.parseFloat(amount) : amount;
+
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(Number.isFinite(value) ? value : 0);
+}

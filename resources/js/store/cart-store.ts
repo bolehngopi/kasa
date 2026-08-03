@@ -33,25 +33,50 @@ interface CartState {
 }
 
 const CART_KEY = "cart";
+const MAX_QTY = 99;
+
+function sameLine(a: CartItem, b: CartItem): boolean {
+    if (a.product_id !== b.product_id) {
+        return false;
+    }
+
+    if ((a.notes ?? "") !== (b.notes ?? "")) {
+        return false;
+    }
+
+    const am = (a.modifiers ?? []).map((m) => m.modifier_id).sort().join(",");
+    const bm = (b.modifiers ?? []).map((m) => m.modifier_id).sort().join(",");
+
+    return am === bm;
+}
 
 export const useCart = create(
     persist<CartState>(
         (set, get) => ({
             items: [],
             add: (item) => {
-                const items = [...get().items, item];
-                set({ items});
+                const items = [...get().items];
+                const existingIndex = items.findIndex((line) => sameLine(line, item));
+
+                if (existingIndex >= 0) {
+                    const existing = items[existingIndex];
+                    items[existingIndex] = {
+                        ...existing,
+                        quantity: Math.min(existing.quantity + item.quantity, MAX_QTY),
+                    };
+                } else {
+                    items.push({ ...item, quantity: Math.min(item.quantity, MAX_QTY) });
+                }
+
+                set({ items });
             },
             remove: (index) => {
-                const items = get().items.filter((_, currentIndex) => currentIndex !== index);
-                set({ items});
+                set({ items: get().items.filter((_, i) => i !== index) });
             },
-            set: (items) => {
-                set({ items});
-            },
-            clear: () => {
-                set({ items: []});
-            },
+
+            set: (items) => set({ items }),
+
+            clear: () => set({ items: [] }),
         }),
         {
             name: CART_KEY,

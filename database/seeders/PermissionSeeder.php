@@ -17,40 +17,45 @@ class PermissionSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // owner
-        Permission::create(['name' => 'manage users']);
-        Permission::create(['name' => 'manage roles']);
-        Permission::create(['name' => 'manage permissions']);
-        Permission::create(['name' => 'manage products']);
+        $permissions = [
+            'manage users',
+            'manage roles',
+            'manage permissions',
+            'manage products',
+            'manage orders',
+            'manage customers',
+        ];
 
-        $owner = Role::create(['name' => 'owner']);
-        $owner->givePermissionTo('manage users');
-        $owner->givePermissionTo('manage roles');
-        $owner->givePermissionTo('manage permissions');
-        $owner->givePermissionTo('manage products');
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission);
+        }
+
+        $owner = Role::findOrCreate('owner');
+        $owner->syncPermissions([
+            'manage users',
+            'manage roles',
+            'manage permissions',
+            'manage products',
+            'manage orders',
+            'manage customers',
+        ]);
 
         // staff
-        Permission::create(['name' => 'manage orders']);
-        Permission::create(['name' => 'manage customers']);
+        $staff = Role::findOrCreate('staff');
+        $staff->syncPermissions([
+            'manage products',
+            'manage orders',
+            'manage customers',
+        ]);
 
-        $staff = Role::create(['name' => 'staff']);
-        $staff->givePermissionTo('manage products');
-        $staff->givePermissionTo('manage orders');
-        $staff->givePermissionTo('manage customers');
-
-        // customer
-        Permission::create(['name' => 'place orders']);
-
-        $customer = Role::create(['name' => 'customer']);
-        $customer->givePermissionTo('place orders');
-
-        // super-admin
-        $superAdmin = Role::create(['name' => 'super-admin']);
+        // admin
+        $admin = Role::findOrCreate('admin');
+        $admin->syncPermissions($permissions);
 
         $user = User::factory()->create([
             'name' => 'Super Admin',
             'email' => 'superadmin@example.com',
         ]);
-        $user->assignRole($superAdmin);
+        $user->assignRole($admin);
     }
 }

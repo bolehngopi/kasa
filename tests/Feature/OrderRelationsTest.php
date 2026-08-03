@@ -33,11 +33,11 @@ test('an order stores its products and modifiers through the correct relations',
                 ],
             ],
         ])
-        ->assertSuccessful();
+        ->assertRedirect();
 
-    $order = Order::with('orderProducts.orderModifiers')->sole();
+    $order = Order::with('products.modifiers')->sole();
 
-    expect($order->orderProducts)->toHaveCount(1)
-        ->and($order->orderProducts->first()->orderModifiers)->toHaveCount(1)
-        ->and($order->orderProducts->first()->orderModifiers->first()->modifier_id)->toBe($modifier->id);
+    expect($order->products)->toHaveCount(1)
+        ->and($order->products->first()->modifiers)->toHaveCount(1)
+        ->and($order->products->first()->modifiers->first()->modifier_id)->toBe($modifier->id);
 });
