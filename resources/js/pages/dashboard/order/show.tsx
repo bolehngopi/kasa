@@ -140,7 +140,7 @@ export default function OrderShow({ order }: { order: Order }) {
                                         {order.customer.email}
                                     </p>
                                 )}
-                                {order.customer?.phone && (
+                                {typeof order.customer?.phone === 'string' && (
                                     <p className="text-sm text-gray-600">
                                         {order.customer.phone}
                                     </p>

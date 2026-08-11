@@ -65,7 +65,7 @@ export default function Checkout() {
         };
 
         fetchTotal();
-    }, [items, calc, setCalc]);
+    }, [items, calc, setCalc, calculation]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(e.target.name as keyof CheckoutData, e.target.value);

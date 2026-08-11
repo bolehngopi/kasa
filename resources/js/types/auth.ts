@@ -9,8 +9,8 @@ export interface User {
     updated_at: string;
     permissions?: any;
     [key: string]: unknown; // This allows for additional properties...
-};
+}
 
 export interface Auth {
     user: User;
-};
+}

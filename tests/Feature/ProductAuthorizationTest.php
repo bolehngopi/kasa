@@ -12,7 +12,7 @@ beforeEach(function () {
 
 it('allows a user with manage_products to view products', function () {
     $admin = User::factory()->create();
-    $admin->givePermissionTo('manage products');
+    $admin->givePermissionTo('manage_products');
 
     $this->actingAs($admin)->get('/dashboard/products')->assertOk();
 });

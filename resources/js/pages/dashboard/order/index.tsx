@@ -21,11 +21,12 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
         <>
             <Head title="Orders Management" />
 
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Manage your store's orders, track statuses, and view customer details.
+                        Manage your store's orders, track statuses, and view
+                        customer details.
                     </p>
                 </div>
             </div>
@@ -36,56 +37,87 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                     <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Order Number</th>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Customer</th>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Staff</th>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Status</th>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Total Amount</th>
-                                <th className="px-6 py-4 font-semibold text-gray-900">Date</th>
-                                <th className="px-6 py-4 text-right font-semibold text-gray-900">Action</th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Order Number
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Customer
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Staff
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Status
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Total Amount
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-gray-900">
+                                    Date
+                                </th>
+                                <th className="px-6 py-4 text-right font-semibold text-gray-900">
+                                    Action
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {orders.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                    <td
+                                        colSpan={7}
+                                        className="px-6 py-8 text-center text-gray-500"
+                                    >
                                         No orders found.
                                     </td>
                                 </tr>
                             ) : (
                                 orders.data.map((order: Order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                                    <tr
+                                        key={order.id}
+                                        className="transition-colors hover:bg-gray-50"
+                                    >
+                                        <td className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
                                             {order.order_number}
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-gray-600">
-                                            {order?.customer?.name || <span className="italic text-gray-400">Guest</span>}
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                                            {order?.customer?.name || (
+                                                <span className="text-gray-400 italic">
+                                                    Guest
+                                                </span>
+                                            )}
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-gray-600">
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                                             {order.staff?.name || '-'}
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${getStatusBadge(order.status)}`}>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${getStatusBadge(order.status)}`}
+                                            >
                                                 {order.status}
                                             </span>
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                                        <td className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
                                             {/* Assuming currency formatting */}
-                                            ${Number(order.total_amount).toFixed(2)}
+                                            $
+                                            {Number(order.total_amount).toFixed(
+                                                2,
+                                            )}
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                                            {new Date(order.created_at).toLocaleDateString('en-US', {
+                                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                                            {new Date(
+                                                order.created_at,
+                                            ).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: 'short',
                                                 day: 'numeric',
                                                 hour: '2-digit',
-                                                minute: '2-digit'
+                                                minute: '2-digit',
                                             })}
                                         </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
                                             <Link
                                                 href={`/dashboard/orders/${order.id}`}
-                                                className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
+                                                className="text-sm font-medium text-blue-600 transition hover:text-blue-800"
                                             >
                                                 View Details
                                             </Link>
@@ -102,7 +134,12 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
             {orders.last_page > 1 && (
                 <div className="mt-6 flex items-center justify-between">
                     <p className="text-sm text-gray-500">
-                        Showing <span className="font-medium">{orders.data.length}</span> of <span className="font-medium">{orders.total}</span> results
+                        Showing{' '}
+                        <span className="font-medium">
+                            {orders.data.length}
+                        </span>{' '}
+                        of <span className="font-medium">{orders.total}</span>{' '}
+                        results
                     </p>
                     <div className="flex gap-1">
                         {/* Note: Inertia paginators include 'links' in the payload. Adjust mapping based on your exact PaginatedOrder interface */}
@@ -113,8 +150,8 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                                     link.active
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+                                } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                 // Prevent clicking on null links (like 'Previous' on page 1)
                                 onClick={(e) => !link.url && e.preventDefault()}

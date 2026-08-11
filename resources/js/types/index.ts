@@ -1,3 +1,5 @@
+import type { User } from './auth';
+
 export type * from './auth';
 export type * from './ui';
 

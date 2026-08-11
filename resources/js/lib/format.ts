@@ -1,4 +1,7 @@
-const locale = import.meta.env.VITE_APP_LOCALE || import.meta.env.VITE_APP_FALLBACK_LOCALE || 'en';
+const locale =
+    import.meta.env.VITE_APP_LOCALE ||
+    import.meta.env.VITE_APP_FALLBACK_LOCALE ||
+    'en';
 
 /** * Format a number as a price string in the current locale.
  *
@@ -8,7 +11,7 @@ const locale = import.meta.env.VITE_APP_LOCALE || import.meta.env.VITE_APP_FALLB
 export function formatPrice(price: number): string {
     return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: 'USD'
+        currency: 'USD',
     }).format(price);
 }
 
@@ -21,16 +24,17 @@ export function formatDate(date: string | Date): string {
     return new Intl.DateTimeFormat(locale, {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
     }).format(new Date(date));
 }
 
 export function formatCurrency(amount: number | string): string {
-    const value = typeof amount === "string" ? Number.parseFloat(amount) : amount;
+    const value =
+        typeof amount === 'string' ? Number.parseFloat(amount) : amount;
 
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(Number.isFinite(value) ? value : 0);

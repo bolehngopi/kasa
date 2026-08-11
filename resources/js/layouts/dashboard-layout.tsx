@@ -1,8 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { PropsWithChildren } from 'react';
-import type { NavItem } from '@/types/navigation';
 import { logout } from '@/routes';
+import type { NavItem } from '@/types/navigation';
 
 const navigation: NavItem[] = [
     { title: 'Dashboard', href: '/dashboard' },

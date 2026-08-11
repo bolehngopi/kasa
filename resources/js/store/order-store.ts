@@ -26,13 +26,15 @@ export const useOrderStore = create<OrderState>()(
 
             removeOrder: (orderNumber: string) =>
                 set((state) => ({
-                    orderNumbers: state.orderNumbers.filter((no) => no !== orderNumber),
+                    orderNumbers: state.orderNumbers.filter(
+                        (no) => no !== orderNumber,
+                    ),
                 })),
 
             clearOrders: () => set({ orderNumbers: [] }),
         }),
         {
             name: 'orders',
-        }
-    )
+        },
+    ),
 );

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\ModifierGroup;
 use App\Models\Modifier;
+use App\Models\ModifierGroup;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

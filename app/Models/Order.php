@@ -26,7 +26,7 @@ class Order extends Model
             }
 
             if (empty($order->queue_number)) {
-                $cacheKey = 'queue_number_' . now()->format('Y-m-d');
+                $cacheKey = 'queue_number_'.now()->format('Y-m-d');
 
                 $order->queue_number = Cache::increment($cacheKey);
 
@@ -39,8 +39,6 @@ class Order extends Model
 
     /**
      * Generate a unique order number based on the template stored in the Settings table.
-     *
-     * @return string
      */
     public static function generateOrderNumber(): string
     {
@@ -61,6 +59,7 @@ class Order extends Model
 
             $orderNumber = preg_replace_callback('/\{RANDOM:(\d+)\}/', function ($matches) {
                 $length = (int) $matches[1];
+
                 return strtoupper(Str::random($length));
             }, $orderNumber);
 

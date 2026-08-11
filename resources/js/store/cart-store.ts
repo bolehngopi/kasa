@@ -1,8 +1,8 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import type { StoreOrderRequest } from "@/types";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { StoreOrderRequest } from '@/types';
 
-export type CartItem = StoreOrderRequest["order_products"][number];
+export type CartItem = StoreOrderRequest['order_products'][number];
 
 export interface BackendModifier {
     id: number;
@@ -32,7 +32,7 @@ interface CartState {
     clear: () => void;
 }
 
-const CART_KEY = "cart";
+const CART_KEY = 'cart';
 const MAX_QTY = 99;
 
 function sameLine(a: CartItem, b: CartItem): boolean {
@@ -40,12 +40,18 @@ function sameLine(a: CartItem, b: CartItem): boolean {
         return false;
     }
 
-    if ((a.notes ?? "") !== (b.notes ?? "")) {
+    if ((a.notes ?? '') !== (b.notes ?? '')) {
         return false;
     }
 
-    const am = (a.modifiers ?? []).map((m) => m.modifier_id).sort().join(",");
-    const bm = (b.modifiers ?? []).map((m) => m.modifier_id).sort().join(",");
+    const am = (a.modifiers ?? [])
+        .map((m) => m.modifier_id)
+        .sort()
+        .join(',');
+    const bm = (b.modifiers ?? [])
+        .map((m) => m.modifier_id)
+        .sort()
+        .join(',');
 
     return am === bm;
 }
@@ -56,16 +62,24 @@ export const useCart = create(
             items: [],
             add: (item) => {
                 const items = [...get().items];
-                const existingIndex = items.findIndex((line) => sameLine(line, item));
+                const existingIndex = items.findIndex((line) =>
+                    sameLine(line, item),
+                );
 
                 if (existingIndex >= 0) {
                     const existing = items[existingIndex];
                     items[existingIndex] = {
                         ...existing,
-                        quantity: Math.min(existing.quantity + item.quantity, MAX_QTY),
+                        quantity: Math.min(
+                            existing.quantity + item.quantity,
+                            MAX_QTY,
+                        ),
                     };
                 } else {
-                    items.push({ ...item, quantity: Math.min(item.quantity, MAX_QTY) });
+                    items.push({
+                        ...item,
+                        quantity: Math.min(item.quantity, MAX_QTY),
+                    });
                 }
 
                 set({ items });
@@ -81,6 +95,6 @@ export const useCart = create(
         {
             name: CART_KEY,
             storage: createJSONStorage(() => localStorage),
-        }
-    )
+        },
+    ),
 );

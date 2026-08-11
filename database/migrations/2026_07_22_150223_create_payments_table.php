@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->string('session_id')->nullable()->unique();
             $table->decimal('amount', 10, 2);
-            $table->enum('status', array_column(\App\Enums\PaymentStatus::cases(), 'value'))->default(\App\Enums\PaymentStatus::ACTIVE->value);
+            $table->enum('status', array_column(PaymentStatus::cases(), 'value'))->default(PaymentStatus::ACTIVE->value);
             $table->string('payment_method')->nullable();
             $table->timestamps();
         });

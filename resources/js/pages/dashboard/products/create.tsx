@@ -158,7 +158,7 @@ export default function CreateProduct({
                                             'slug',
                                             e.target.value
                                                 .toLowerCase()
-                                                .replace(/[^a-z0-9\-]+/g, ''),
+                                                .replace(/[^a-z0-9-]+/g, ''),
                                         )
                                     }
                                     className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:ring-1 focus:outline-none ${errors.slug ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}

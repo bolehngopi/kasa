@@ -40,7 +40,7 @@ export default function ViewOrder() {
 
     useEffect(() => {
         if (items.length === 0) {
-            setCalc(null);
+            queueMicrotask(() => setCalc(null));
 
             return;
         }
@@ -63,7 +63,7 @@ export default function ViewOrder() {
         };
 
         fetchTotal();
-    }, [items]);
+    }, [items, calculation]);
 
     const handleSaveNote = (index: number) => {
         const updatedItems = [...items];

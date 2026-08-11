@@ -18,33 +18,37 @@ export default function InvoiceList({
 
     const guestOrdersHttp = useHttp({ order_numbers: [] as string[] });
 
-    const fetchGuestOrders = (numbers: string[]) => {
-        if (numbers.length === 0) {
-            setGuestOrders([]);
-            setIsLoading(false);
+    useEffect(() => {
+        if (!isGuest) {
+            return;
+        }
+
+        if (orderNumbers.length === 0) {
+            queueMicrotask(() => {
+                setGuestOrders([]);
+                setIsLoading(false);
+            });
 
             return;
         }
 
-        setIsLoading(true);
-        guestOrdersHttp.setData({ order_numbers: numbers });
+        const fetchOrders = async () => {
+            setIsLoading(true);
+            guestOrdersHttp.setData({ order_numbers: orderNumbers });
 
-        guestOrdersHttp.post(getGuestOrders.url(), {
-            onSuccess: (data) => {
-                setGuestOrders(data as Order[]);
-                setIsLoading(false);
-            },
-            onHttpException: () => {
-                setIsLoading(false);
-            },
-        });
-    };
+            await guestOrdersHttp.post(getGuestOrders.url(), {
+                onSuccess: (data) => {
+                    setGuestOrders(data as Order[]);
+                    setIsLoading(false);
+                },
+                onHttpException: () => {
+                    setIsLoading(false);
+                },
+            });
+        };
 
-    useEffect(() => {
-        if (isGuest) {
-            fetchGuestOrders(orderNumbers);
-        }
-    }, [isGuest, orderNumbers]);
+        fetchOrders();
+    }, [isGuest, orderNumbers, guestOrdersHttp]);
 
     const handleRemoveOrder = (e: React.MouseEvent, orderNumber: string) => {
         e.preventDefault();

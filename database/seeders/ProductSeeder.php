@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\ModifierGroup;
 use App\Models\Modifier;
+use App\Models\ModifierGroup;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
