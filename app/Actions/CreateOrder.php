@@ -29,7 +29,7 @@ final class CreateOrder
                 ->get()
                 ->keyBy('id');
 
-            $isCashier = $user?->can('create_orders') ?? false;
+            $isCashier = $user?->can('create orders') ?? false;
 
             $staffId = $isCashier ? $user->id : null;
             $customerId = $isCashier ? ($data['customer_id'] ?? null) : $user?->id;

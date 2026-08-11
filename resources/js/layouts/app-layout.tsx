@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+
 export default function AppLayout({
     children
 } : {
-    children: React.ReactNode
+    children: ReactNode
 }) {
     return (
         <div className="flex min-h-screen w-full flex-col bg-gray-50">

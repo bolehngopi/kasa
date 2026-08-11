@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import type { NavItem } from '@/types/navigation';
+import { logout } from '@/routes';
 
 const navigation: NavItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -36,7 +37,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
                 >
-                    -
+                    {/*  */}
                 </div>
             )}
 
@@ -84,7 +85,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                 {/* Sidebar Footer (Logout) */}
                 <div className="border-t border-gray-200 p-4">
                     <Link
-                        href="/logout"
+                        href={logout.url()}
                         method="post"
                         as="button"
                         className="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"

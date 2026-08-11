@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Gate::before(function ($user) {
-            if ($user->hasRole('super-admin')) {
+            if ($user->hasRole('admin')) {
                 return true;
             }
         });

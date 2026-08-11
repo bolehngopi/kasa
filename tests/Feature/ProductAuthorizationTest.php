@@ -12,12 +12,12 @@ beforeEach(function () {
 
 it('allows a user with manage_products to view products', function () {
     $admin = User::factory()->create();
-    $admin->givePermissionTo('manage_products');
+    $admin->givePermissionTo('manage products');
 
     $this->actingAs($admin)->get('/dashboard/products')->assertOk();
 });
 
-it('blocks a user without manage_products', function () {
+it('blocks a user without manage products', function () {
     $cashier = User::factory()->create();
     $cashier->assignRole('cashier');
 

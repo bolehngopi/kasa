@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->foreignId('staff_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('order_number')->unique();
-            $table->enum('status', \App\Enums\OrderStatus::cases())->default(\App\Enums\OrderStatus::PENDING);
+            $table->enum('status', array_column(\App\Enums\OrderStatus::cases(), 'value'))->default(\App\Enums\OrderStatus::PENDING->value);
             $table->decimal('total_amount', 10, 2)->default(0);
             $table->decimal('tax_amount', 10, 2)->default(0);
             $table->decimal('discount_amount', 10, 2)->default(0);

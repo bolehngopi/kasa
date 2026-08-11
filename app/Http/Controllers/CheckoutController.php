@@ -70,6 +70,8 @@ class CheckoutController extends Controller
         foreach ($items as $item) {
             $product = $products->get($item['id']);
 
+            abort_unless($product && $product->is_active, 422, 'Product is not available.');
+
             $unitPrice = (string) $product->price;
             $appliedModifiers = [];
 

@@ -1,4 +1,4 @@
-const locale = import.meta.env.APP_LOCALE || import.meta.env.APP_FALLBACK_LOCALE || 'en';
+const locale = import.meta.env.VITE_APP_LOCALE || import.meta.env.VITE_APP_FALLBACK_LOCALE || 'en';
 
 /** * Format a number as a price string in the current locale.
  *

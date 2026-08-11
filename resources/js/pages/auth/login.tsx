@@ -1,8 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import {
-    authenticate,
-    signup,
-} from '@/actions/App/Http/Controllers/AuthController';
+import { authenticate, signup } from '@/routes';
 
 export default function Login() {
     const { data, setData, processing, errors, submit } = useForm({
