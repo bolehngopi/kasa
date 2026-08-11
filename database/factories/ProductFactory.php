@@ -23,7 +23,7 @@ class ProductFactory extends Factory
             'slug' => $this->faker->unique()->slug(),
             'sku' => $this->faker->unique()->bothify('SKU-####'),
             'description' => $this->faker->sentence(),
-            'image_url' => $this->faker->imageUrl(),
+            'image_url' => 'https://dummyimage.com/600x400/e5e7eb/9ca3af?text=' . urlencode($this->faker->word()),
             'is_active' => $this->faker->boolean(80),
             'price' => $this->faker->randomFloat(2, 1, 1000),
             'created_by' => \App\Models\User::factory(),

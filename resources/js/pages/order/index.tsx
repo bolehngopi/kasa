@@ -32,7 +32,6 @@ export default function Order({ products, categories }: OrderingProps) {
     const openDrawer = (product: Product) => {
         setSelectedProduct(product);
 
-        // 1. Check for modifiers that have is_default === true and pre-select them
         const defaultModifierIds: number[] = [];
         product.modifier_groups?.forEach((group) => {
             group.modifiers?.forEach((modifier) => {
