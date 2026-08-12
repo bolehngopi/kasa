@@ -1,8 +1,41 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { getStatusBadge } from '@/lib/utils';
+import { index as indexOrders, update as updateOrder } from '@/routes/orders';
 import type { Order } from '@/types';
+import { useState } from 'react';
+
+const STATUS_OPTIONS = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'payment_pending', label: 'Payment Pending' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'refunded', label: 'Refunded' },
+];
 
 export default function OrderShow({ order }: { order: Order }) {
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState(order.status);
+
+    const handleStatusUpdate = (newStatus: string) => {
+        if (updatingStatus || newStatus === order.status) return;
+
+        setUpdatingStatus(true);
+        router.patch(
+            updateOrder.url(order.id),
+            { status: newStatus },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSelectedStatus(newStatus);
+                },
+                onFinish: () => {
+                    setUpdatingStatus(false);
+                },
+            },
+        );
+    };
+
     return (
         <>
             <Head title={`Order ${order.order_number}`} />
@@ -11,7 +44,7 @@ export default function OrderShow({ order }: { order: Order }) {
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <Link
-                        href="/dashboard/orders"
+                        href={indexOrders.url()}
                         className="mb-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-800"
                     >
                         &larr; Back to Orders
@@ -23,7 +56,7 @@ export default function OrderShow({ order }: { order: Order }) {
                         <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${getStatusBadge(order.status)}`}
                         >
-                            {order.status}
+                            {order.status.replace('_', ' ')}
                         </span>
                     </div>
                     <p className="mt-1 text-sm text-gray-500">
@@ -37,6 +70,59 @@ export default function OrderShow({ order }: { order: Order }) {
                             minute: '2-digit',
                         })}
                     </p>
+                </div>
+
+                {/* Status Quick Actions & Switcher */}
+                <div className="flex flex-wrap items-center gap-2">
+                    {order.status !== 'completed' && order.status !== 'cancelled' && (
+                        <>
+                            {(order.status === 'pending' || order.status === 'payment_pending') && (
+                                <button
+                                    type="button"
+                                    disabled={updatingStatus}
+                                    onClick={() => handleStatusUpdate('paid')}
+                                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                    {updatingStatus ? 'Updating...' : 'Mark as Paid'}
+                                </button>
+                            )}
+
+                            {order.status === 'paid' && (
+                                <button
+                                    type="button"
+                                    disabled={updatingStatus}
+                                    onClick={() => handleStatusUpdate('completed')}
+                                    className="inline-flex items-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {updatingStatus ? 'Updating...' : 'Mark as Completed'}
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                disabled={updatingStatus}
+                                onClick={() => handleStatusUpdate('cancelled')}
+                                className="inline-flex items-center rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
+                            >
+                                Cancel Order
+                            </button>
+                        </>
+                    )}
+
+                    <div className="relative">
+                        <select
+                            value={selectedStatus}
+                            disabled={updatingStatus}
+                            onChange={(e) => handleStatusUpdate(e.target.value)}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                        >
+                            {STATUS_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    Status: {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -215,3 +301,4 @@ export default function OrderShow({ order }: { order: Order }) {
         </>
     );
 }
+

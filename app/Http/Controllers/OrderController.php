@@ -4,15 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Category;
 use App\Models\Modifier;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    protected function authorizeManageOrders(): void
+    {
+        if (Auth::check() && ! Auth::user()?->can('manage orders') && ! Auth::user()?->can('manage_orders')) {
+            throw new AuthorizationException;
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -115,9 +125,21 @@ class OrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Order $order)
+    public function update(UpdateOrderStatusRequest $request, Order $order)
     {
-        //
+        $this->authorizeManageOrders();
+
+        $validated = $request->validated();
+
+        $order->update([
+            'status' => $validated['status'],
+        ]);
+
+        if (! empty($validated['notes'])) {
+            $order->update(['notes' => $validated['notes']]);
+        }
+
+        return redirect()->route('orders.show', $order)->with('success', 'Order status updated to '.str_replace('_', ' ', $validated['status']).'.');
     }
 
     /**
@@ -125,7 +147,11 @@ class OrderController extends Controller
      */
     public function destroy(Order $order)
     {
-        //
+        $this->authorizeManageOrders();
+
+        $order->delete();
+
+        return redirect()->route('orders.index')->with('success', 'Order deleted successfully.');
     }
 
     public function ordering(Request $request)

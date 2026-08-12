@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { show as showOrder } from '@/routes/orders';
 import type { Order, PaginatedOrder } from '@/types';
 
 const getStatusBadge = (status: string) => {
@@ -116,7 +117,7 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                                         </td>
                                         <td className="px-6 py-4 text-right whitespace-nowrap">
                                             <Link
-                                                href={`/dashboard/orders/${order.id}`}
+                                                href={showOrder.url(order)}
                                                 className="text-sm font-medium text-blue-600 transition hover:text-blue-800"
                                             >
                                                 View Details
