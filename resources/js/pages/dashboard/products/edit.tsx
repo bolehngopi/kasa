@@ -1,38 +1,53 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { store } from '@/routes/products';
-import type { Category } from '@/types';
+import { update } from '@/routes/products';
+import type { Category, Product } from '@/types';
 
 interface ModifierInput {
+    id?: number;
     name: string;
     price: number;
+    sku?: string;
 }
 
 interface ModifierGroupInput {
+    id?: number;
     name: string;
     modifiers: ModifierInput[];
 }
 
-export default function CreateProduct({
+export default function EditProduct({
+    product,
     categories,
 }: {
+    product: Product;
     categories: Category[];
 }) {
     const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        slug: '',
-        description: '',
-        price: 0,
-        stock: 0,
-        category_id: '',
+        _method: 'put',
+        name: product.name || '',
+        slug: product.slug || '',
+        description: product.description || '',
+        price: Number(product.price) || 0,
+        stock: Number(product.stock) || 0,
+        category_id: product.category_id || '',
         image: null as File | null,
-        sku: '',
-        is_active: true,
-        modifier_groups: [] as ModifierGroupInput[],
+        sku: product.sku || '',
+        is_active: product.is_active ?? true,
+        modifier_groups: (product.modifier_groups || []).map((group) => ({
+            id: group.id,
+            name: group.name,
+            modifiers: (group.modifiers || []).map((mod) => ({
+                id: mod.id,
+                name: mod.name,
+                price: Number(mod.price) || 0,
+                sku: mod.sku || '',
+            })),
+        })) as ModifierGroupInput[],
     });
 
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        post(store.url());
+        post(update.url(product.id));
     };
 
     const addModifierGroup = () => {
@@ -68,7 +83,6 @@ export default function CreateProduct({
         value: string | number,
     ) => {
         const updatedGroups = [...data.modifier_groups];
-        // Use type assertion here since we know the mapping is correct
         (updatedGroups[groupIndex].modifiers[modIndex] as any)[field] = value;
         setData('modifier_groups', updatedGroups);
     };
@@ -83,21 +97,20 @@ export default function CreateProduct({
 
     return (
         <>
-            <Head title="Create New Product" />
+            <Head title={`Edit ${product.name}`} />
 
             <div className="mb-6">
                 <Link
-                    href="/dashboard/products"
+                    href={`/dashboard/products/${product.id}`}
                     className="mb-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-800"
                 >
-                    &larr; Back to Products
+                    &larr; Back to Product Details
                 </Link>
                 <h1 className="text-2xl font-bold text-gray-900">
-                    Create Product
+                    Edit Product: {product.name}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Add a new product to your catalog. Fill in the details
-                    below.
+                    Update product information, inventory, and customization options.
                 </p>
             </div>
 
@@ -121,14 +134,6 @@ export default function CreateProduct({
                                     placeholder="e.g. Iced Caramel Macchiato"
                                     onChange={(e) => {
                                         setData('name', e.target.value);
-                                        setData(
-                                            'slug',
-                                            data.slug ||
-                                            e.target.value
-                                                .toLowerCase()
-                                                .replace(/[^a-z0-9]+/g, '-')
-                                                .replace(/(^-|-$)+/g, ''),
-                                        );
                                     }}
                                     className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:ring-1 focus:outline-none ${errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
                                 />
@@ -177,7 +182,7 @@ export default function CreateProduct({
                                     htmlFor="sku"
                                     className="block text-sm font-medium text-gray-700"
                                 >
-                                    SKU
+                                    SKU <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     id="sku"
@@ -304,6 +309,18 @@ export default function CreateProduct({
                                 >
                                     Product Image
                                 </label>
+                                {product.image_url && (
+                                    <div className="mt-1 mb-2 flex items-center gap-3">
+                                        <img
+                                            src={product.image_url}
+                                            alt={product.name}
+                                            className="h-12 w-12 rounded-lg border border-gray-200 object-cover"
+                                        />
+                                        <span className="text-xs text-gray-500">
+                                            Current image (upload new file below to replace)
+                                        </span>
+                                    </div>
+                                )}
                                 <input
                                     id="image"
                                     type="file"
@@ -536,7 +553,7 @@ export default function CreateProduct({
 
                     <div className="flex items-center justify-end gap-4 border-t border-gray-200 p-6 sm:p-8">
                         <Link
-                            href="/dashboard/products"
+                            href={`/dashboard/products/${product.id}`}
                             className="text-sm font-medium text-gray-600 hover:text-gray-900"
                         >
                             Cancel
@@ -546,7 +563,7 @@ export default function CreateProduct({
                             disabled={processing}
                             className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {processing ? 'Saving...' : 'Create Product'}
+                            {processing ? 'Saving...' : 'Update Product'}
                         </button>
                     </div>
                 </form>

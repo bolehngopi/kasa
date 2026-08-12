@@ -11,6 +11,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -81,7 +82,7 @@ class ProductController extends Controller
         }
 
         $product = Auth::user()->products()->create(
-            collect($validated)->except('modifier_groups')->all()
+            collect($validated)->except(['image', 'modifier_groups'])->all()
         );
 
         $this->syncModifierGroups($product, $validated['modifier_groups'] ?? []);
@@ -98,6 +99,19 @@ class ProductController extends Controller
 
         return Inertia::render('dashboard/products/show', [
             'product' => $product->load('category', 'creator', 'modifierGroups.modifiers'),
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Product $product)
+    {
+        $this->authorizeManageProducts();
+
+        return Inertia::render('dashboard/products/edit', [
+            'product' => $product->load('category', 'modifierGroups.modifiers'),
+            'categories' => Category::all(['id', 'name']),
         ]);
     }
 
@@ -122,9 +136,9 @@ class ProductController extends Controller
             );
         }
 
-        $product->update(
-            collect($validated)->except('modifier_groups')->all()
-        );
+        $productData = collect($validated)->except(['image', 'modifier_groups'])->all();
+
+        $product->update($productData);
 
         $this->syncModifierGroups($product, $validated['modifier_groups'] ?? []);
 
@@ -154,16 +168,24 @@ class ProductController extends Controller
             $modifiers = $groupData['modifiers'] ?? [];
             unset($groupData['modifiers']);
 
-            $group = $product->modifierGroups()->updateOrCreate(
-                ['id' => $groupData['id'] ?? null],
-                $groupData
-            );
+            if (! empty($groupData['id'])) {
+                $group = ModifierGroup::findOrFail($groupData['id']);
+                $group->update($groupData);
+            } else {
+                $group = ModifierGroup::create($groupData);
+            }
+
+            $product->modifierGroups()->syncWithoutDetaching([$group->id]);
 
             $keepGroupIds[] = $group->id;
 
             $keepModifierIds = [];
 
             foreach ($modifiers as $modifierData) {
+                if (empty($modifierData['sku'])) {
+                    $modifierData['sku'] = 'MOD-'.strtoupper(Str::random(8));
+                }
+
                 $modifier = $group->modifiers()->updateOrCreate(
                     ['id' => $modifierData['id'] ?? null],
                     $modifierData

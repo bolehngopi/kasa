@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { index, show } from '@/routes/products';
+import { edit, index, show } from '@/routes/products';
 import type { PaginatedProduct, Product } from '@/types';
 
 export default function Products({ products }: { products: PaginatedProduct }) {
@@ -196,7 +196,7 @@ export default function Products({ products }: { products: PaginatedProduct }) {
                                         </td>
                                         <td className="px-6 py-4 text-right whitespace-nowrap">
                                             <Link
-                                                href={show(product.id)}
+                                                href={edit(product.id)}
                                                 className="text-sm font-medium text-blue-600 transition hover:text-blue-800"
                                             >
                                                 Edit

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
@@ -22,20 +24,23 @@ class UpdateProductRequest extends FormRequest
      */
     public function rules(): array
     {
+        $product = $this->route('product');
+        $productId = $product instanceof Product ? $product->id : $product;
+
         return [
             'image' => ['nullable', 'image', 'max:2048'],
-            'name' => ['string', 'max:255'],
-            'slug' => ['string', 'max:255', 'unique:products,slug,'.$this->id],
-            'sku' => ['string', 'max:255', 'unique:products,sku,'.$this->id],
-            'description' => ['string'],
-            'is_active' => ['boolean'],
-            'price' => ['numeric', 'min:0'],
-            'stock' => ['integer', 'min:0'],
-            'category_id' => ['nullable', 'exists:categories,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($productId)],
+            'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($productId)],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'category_id' => ['required', 'exists:categories,id'],
 
             'modifier_groups' => ['nullable', 'array'],
             'modifier_groups.*.id' => ['nullable', 'exists:modifier_groups,id'],
-            'modifier_groups.*.name' => ['nullable', 'string', 'max:255'],
+            'modifier_groups.*.name' => ['required_with:modifier_groups', 'string', 'max:255'],
             'modifier_groups.*.description' => ['nullable', 'string'],
             'modifier_groups.*.is_required' => ['nullable', 'boolean'],
             'modifier_groups.*.is_active' => ['nullable', 'boolean'],
@@ -46,11 +51,11 @@ class UpdateProductRequest extends FormRequest
 
             'modifier_groups.*.modifiers' => ['nullable', 'array'],
             'modifier_groups.*.modifiers.*.id' => ['nullable', 'exists:modifiers,id'],
-            'modifier_groups.*.modifiers.*.name' => ['nullable', 'string', 'max:255'],
-            'modifier_groups.*.modifiers.*.price' => ['nullable', 'numeric', 'min:0'],
+            'modifier_groups.*.modifiers.*.name' => ['required_with:modifier_groups.*.modifiers', 'string', 'max:255'],
+            'modifier_groups.*.modifiers.*.price' => ['required_with:modifier_groups.*.modifiers', 'numeric', 'min:0'],
             'modifier_groups.*.modifiers.*.is_active' => ['nullable', 'boolean'],
             'modifier_groups.*.modifiers.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'modifier_groups.*.modifiers.*.sku' => ['nullable', 'string', 'max:255', 'unique:modifiers,sku,'.($this->input('modifier_groups.*.modifiers.*.id') ?? 'NULL')],
+            'modifier_groups.*.modifiers.*.sku' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -59,6 +64,8 @@ class UpdateProductRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge(['slug' => Str::slug($this->slug)]);
+        if ($this->has('slug')) {
+            $this->merge(['slug' => Str::slug($this->slug)]);
+        }
     }
 }

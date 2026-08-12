@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { edit } from '@/routes/products';
 import { getStockBadge } from '@/lib/utils';
 import type { Product } from '@/types';
 
@@ -32,7 +33,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </div>
 
                 <Link
-                    href={`/dashboard/products/${product.id}/edit`}
+                    href={edit(product.id)}
                     className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                 >
                     Edit Product
