@@ -4,6 +4,7 @@ use App\Models\Modifier;
 use App\Models\ModifierGroup;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 
 it('creates a guest order with server-side computed totals', function () {
     $product = Product::factory()->create(['price' => 15000, 'is_active' => true]);
@@ -78,6 +79,26 @@ it('increments the daily queue number per order', function () {
             'cart' => [['product_id' => $product->id, 'quantity' => 1]],
         ]);
     }
+
+    expect(Order::orderBy('id')->pluck('queue_number')->all())->toBe([1, 2]);
+});
+
+it('preserves daily queue number sequence across cache clear', function () {
+    $product = Product::factory()->create(['is_active' => true]);
+
+    $this->post('/checkout', [
+        'customer_name' => 'Budi',
+        'payment_method' => 'cash',
+        'cart' => [['product_id' => $product->id, 'quantity' => 1]],
+    ]);
+
+    Cache::flush();
+
+    $this->post('/checkout', [
+        'customer_name' => 'Budi',
+        'payment_method' => 'cash',
+        'cart' => [['product_id' => $product->id, 'quantity' => 1]],
+    ]);
 
     expect(Order::orderBy('id')->pluck('queue_number')->all())->toBe([1, 2]);
 });

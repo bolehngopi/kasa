@@ -28,10 +28,12 @@ class Order extends Model
             if (empty($order->queue_number)) {
                 $cacheKey = 'queue_number_'.now()->format('Y-m-d');
 
-                $order->queue_number = Cache::increment($cacheKey);
-
-                if ($order->queue_number === 1) {
-                    Cache::put($cacheKey, 1, now()->endOfDay());
+                if (! Cache::has($cacheKey)) {
+                    $maxQueue = (int) static::whereDate('created_at', now()->today())->max('queue_number');
+                    $order->queue_number = $maxQueue + 1;
+                    Cache::put($cacheKey, $order->queue_number, now()->endOfDay());
+                } else {
+                    $order->queue_number = Cache::increment($cacheKey);
                 }
             }
         });
