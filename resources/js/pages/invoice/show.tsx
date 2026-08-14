@@ -178,21 +178,40 @@ export default function InvoiceShow({ order }: { order: Order }) {
                                                 )}
                                             </div>
 
-                                            <div className="shrink-0 text-right">
-                                                <p className="text-xs text-gray-500">
-                                                    Price: $
-                                                    {Number(
-                                                        product.price,
-                                                    ).toFixed(2)}
-                                                </p>
-                                                <p className="mt-0.5 text-base font-black text-gray-900">
-                                                    $
-                                                    {(
-                                                        Number(product.price) *
-                                                        product.quantity
-                                                    ).toFixed(2)}
-                                                </p>
-                                            </div>
+                                            {(() => {
+                                                const modifiersPrice =
+                                                    product.modifiers?.reduce(
+                                                        (sum, m) =>
+                                                            sum +
+                                                            Number(
+                                                                m.price || 0,
+                                                            ),
+                                                        0,
+                                                    ) || 0;
+                                                const unitPrice =
+                                                    Number(product.price || 0) +
+                                                    modifiersPrice;
+                                                const lineTotal =
+                                                    unitPrice *
+                                                    (product.quantity || 1);
+
+                                                return (
+                                                    <div className="shrink-0 text-right">
+                                                        <p className="text-xs text-gray-500">
+                                                            Price: $
+                                                            {unitPrice.toFixed(
+                                                                2,
+                                                            )}
+                                                        </p>
+                                                        <p className="mt-0.5 text-base font-black text-gray-900">
+                                                            $
+                                                            {lineTotal.toFixed(
+                                                                2,
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     ))}
                                 </div>

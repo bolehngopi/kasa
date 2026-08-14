@@ -26,6 +26,7 @@ class CalculateTotalRequest extends FormRequest
             'products' => ['required', 'array', 'min:1', 'max:100'],
             'products.*.id' => ['required', 'integer', 'exists:products,id'],
             'products.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'products.*.notes' => ['nullable', 'string', 'max:500'],
             'products.*.modifiers' => ['nullable', 'array'],
             'products.*.modifiers.*' => ['integer', 'exists:modifiers,id'],
         ];

@@ -17,11 +17,12 @@ interface CalculateTotalPayload {
     }>;
 }
 
-function mapCartItemsToPayload(items: CartItem[]): CalculateTotalPayload {
+function mapCartItemsToPayload(items: CartItem[]) {
     return {
         products: items.map((item) => ({
             id: item.product_id,
             quantity: item.quantity,
+            notes: item.notes,
             modifiers:
                 item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
         })),
@@ -32,38 +33,61 @@ export default function ViewOrder() {
     const { items, set, remove } = useCart();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const calculation = useHttp(mapCartItemsToPayload(items));
-    const [calc, setCalc] = useState<CalculateTotalResponse | null>();
+    const [calc, setCalc] = useState<CalculateTotalResponse | null>(null);
 
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [noteText, setNoteText] = useState<string>('');
 
     useEffect(() => {
         if (items.length === 0) {
-            queueMicrotask(() => setCalc(null));
-
+            setCalc(null);
+            setLoading(false);
             return;
         }
 
-        const fetchTotal = async () => {
-            setLoading(true);
-            setError(null);
+        let isMounted = true;
+        setLoading(true);
+        setError(null);
 
-            calculation.setData(mapCartItemsToPayload(items));
-
-            await calculation.post(calculateTotal.url(), {
-                onSuccess: (data) => {
+        fetch(calculateTotal.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(mapCartItemsToPayload(items)),
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    return res.text().then((text) => Promise.reject(text));
+                }
+                return res.json();
+            })
+            .then((data) => {
+                if (isMounted) {
                     setCalc(data as CalculateTotalResponse);
-                },
-                onHttpException: (response) => {
-                    setError(response.data as string);
-                },
+                }
+            })
+            .catch((err) => {
+                if (isMounted) {
+                    setError(
+                        typeof err === 'string'
+                            ? err
+                            : 'Failed to calculate total',
+                    );
+                }
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setLoading(false);
+                }
             });
-            setLoading(false);
-        };
 
-        fetchTotal();
-    }, [items, calculation]);
+        return () => {
+            isMounted = false;
+        };
+    }, [items]);
 
     const handleSaveNote = (index: number) => {
         const updatedItems = [...items];
@@ -200,7 +224,7 @@ export default function ViewOrder() {
                                                     <div className="flex shrink-0 flex-col items-end gap-3">
                                                         <span className="text-xl font-black text-blue-700">
                                                             {calculatedItem
-                                                                ? `$${(Number(calculatedItem.price || 0) * cartItem.quantity).toFixed(2)}`
+                                                                ? `$${(calculatedItem.line_total ?? Number(calculatedItem.unit_price ?? calculatedItem.price || 0) * cartItem.quantity).toFixed(2)}`
                                                                 : '...'}
                                                         </span>
 

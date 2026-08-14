@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Modifier;
+use App\Models\ModifierGroup;
 use App\Models\Order;
 use App\Models\Product;
 
@@ -78,4 +80,33 @@ it('increments the daily queue number per order', function () {
     }
 
     expect(Order::orderBy('id')->pluck('queue_number')->all())->toBe([1, 2]);
+});
+
+it('returns unit_price, line_total, and notes from calculate-total including modifiers', function () {
+    $product = Product::factory()->create(['price' => 10000, 'is_active' => true]);
+    $group = ModifierGroup::factory()->create();
+    $product->modifierGroups()->attach($group->id);
+
+    $modifier = Modifier::factory()->create([
+        'modifier_group_id' => $group->id,
+        'price' => 2500,
+        'is_active' => true,
+    ]);
+
+    $response = $this->postJson('/order/calculate-total', [
+        'products' => [
+            [
+                'id' => $product->id,
+                'quantity' => 2,
+                'notes' => 'Less sugar',
+                'modifiers' => [$modifier->id],
+            ],
+        ],
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('subtotal', 25000.0)
+        ->assertJsonPath('products.0.unit_price', 12500.0)
+        ->assertJsonPath('products.0.line_total', 25000.0)
+        ->assertJsonPath('products.0.notes', 'Less sugar');
 });

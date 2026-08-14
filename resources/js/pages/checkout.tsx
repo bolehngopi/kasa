@@ -1,4 +1,4 @@
-import { Head, Link, useForm, useHttp, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { storeCheckout } from '@/routes';
 import { calculateTotal } from '@/routes/order';
@@ -19,6 +19,7 @@ function mapCartItemsToPayload(items: CartItem[]) {
         products: items.map((item) => ({
             id: item.product_id,
             quantity: item.quantity,
+            notes: item.notes,
             modifiers:
                 item.modifiers?.map((modifier) => modifier.modifier_id) ?? [],
         })),
@@ -29,43 +30,58 @@ export default function Checkout() {
     const { items, clear } = useCart();
     const { addOrder } = useOrderStore();
     const { auth } = usePage().props as { auth?: { user?: any } };
-    const [calc, setCalc] = useState<CalculateTotalResponse | null>();
+    const [calc, setCalc] = useState<CalculateTotalResponse | null>(null);
+    const [isCalculating, setIsCalculating] = useState<boolean>(
+        items.length > 0,
+    );
 
     const { data, setData, post, processing, errors, transform } =
         useForm<CheckoutData>({
-            customer_name: '',
+            customer_name: auth?.user?.name ?? '',
             customer_last_name: '',
-            customer_email: '',
+            customer_email: auth?.user?.email ?? '',
             cart: items,
             payment_method: 'cash',
         });
 
-    const calculation = useHttp(mapCartItemsToPayload(items));
-    const [isCalculating, setIsCalculating] = useState<boolean>(
-        !calc && items.length > 0,
-    );
-
     useEffect(() => {
-        if (items.length === 0 || calc) {
+        if (items.length === 0) {
+            setCalc(null);
+            setIsCalculating(false);
             return;
         }
 
-        const fetchTotal = async () => {
-            setIsCalculating(true);
-            calculation.setData(mapCartItemsToPayload(items));
+        let isMounted = true;
+        setIsCalculating(true);
 
-            await calculation.post(calculateTotal.url(), {
-                onSuccess: (responseData) => {
+        fetch(calculateTotal.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(mapCartItemsToPayload(items)),
+        })
+            .then((res) => res.json())
+            .then((responseData) => {
+                if (isMounted) {
                     setCalc(responseData as CalculateTotalResponse);
-                },
-                onFinish: () => {
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to calculate total:', err);
+            })
+            .finally(() => {
+                if (isMounted) {
                     setIsCalculating(false);
-                },
+                }
             });
-        };
 
-        fetchTotal();
-    }, [items, calc, setCalc, calculation]);
+        return () => {
+            isMounted = false;
+        };
+    }, [items]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(e.target.name as keyof CheckoutData, e.target.value);
@@ -186,10 +202,7 @@ export default function Checkout() {
                                             htmlFor="customer_email"
                                             className="block text-sm font-medium text-gray-700"
                                         >
-                                            Email Address{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            Email Address
                                         </label>
                                         <input
                                             type="email"
@@ -223,7 +236,7 @@ export default function Checkout() {
                                     >
                                         <input
                                             type="radio"
-                                            name="payment_method" // Fixed mapping name
+                                            name="payment_method"
                                             value="cash"
                                             checked={
                                                 data.payment_method === 'cash'
@@ -241,7 +254,7 @@ export default function Checkout() {
                                     >
                                         <input
                                             type="radio"
-                                            name="payment_method" // Fixed mapping name
+                                            name="payment_method"
                                             value="qris"
                                             checked={
                                                 data.payment_method === 'qris'
@@ -295,52 +308,78 @@ export default function Checkout() {
 
                             <div className="max-h-125 space-y-4 overflow-y-auto pr-2">
                                 {calc?.products ? (
-                                    calc.products.map((item, index) => (
-                                        <div
-                                            key={`${item.id}-${index}`}
-                                            className="flex justify-between border-b border-gray-200 py-3 last:border-0"
-                                        >
-                                            <div>
-                                                <p className="font-medium text-gray-900">
-                                                    {item.name}
-                                                </p>
-                                                <p className="mt-0.5 text-sm text-gray-500">
-                                                    Qty: {item.quantity}
-                                                </p>
-                                                <p className="mt-0.5 text-sm text-gray-500">
-                                                    {item.notes}
-                                                </p>
+                                    calc.products.map((item, index) => {
+                                        const lineTotal =
+                                            item.line_total ??
+                                            Number(
+                                                item.unit_price ?? item.price,
+                                            ) *
+                                                item.quantity;
 
-                                                {item.modifiers &&
-                                                    item.modifiers.length >
-                                                        0 && (
-                                                        <div className="mt-2 border-l-2 border-gray-300 pl-3">
-                                                            {item.modifiers.map(
-                                                                (mod) => (
-                                                                    <p
-                                                                        key={
-                                                                            mod.id
-                                                                        }
-                                                                        className="text-xs text-gray-500"
-                                                                    >
-                                                                        +{' '}
-                                                                        {
-                                                                            mod.name
-                                                                        }
-                                                                    </p>
-                                                                ),
-                                                            )}
-                                                        </div>
+                                        return (
+                                            <div
+                                                key={`${item.id}-${index}`}
+                                                className="flex justify-between border-b border-gray-200 py-3 last:border-0"
+                                            >
+                                                <div>
+                                                    <p className="font-medium text-gray-900">
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="mt-0.5 text-sm text-gray-500">
+                                                        Qty: {item.quantity}
+                                                    </p>
+                                                    {item.notes && (
+                                                        <p className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800 border border-amber-200">
+                                                            Note: {item.notes}
+                                                        </p>
                                                     )}
+
+                                                    {item.modifiers &&
+                                                        item.modifiers.length >
+                                                            0 && (
+                                                            <div className="mt-2 border-l-2 border-gray-300 pl-3">
+                                                                {item.modifiers.map(
+                                                                    (mod) => (
+                                                                        <p
+                                                                            key={
+                                                                                mod.id
+                                                                            }
+                                                                            className="text-xs text-gray-500"
+                                                                        >
+                                                                            +{' '}
+                                                                            {
+                                                                                mod.name
+                                                                            }
+                                                                            {Number(
+                                                                                mod.price,
+                                                                            ) >
+                                                                                0 && (
+                                                                                <span className="ml-1 text-gray-400">
+                                                                                    (+
+                                                                                    $
+                                                                                    {Number(
+                                                                                        mod.price,
+                                                                                    ).toFixed(
+                                                                                        2,
+                                                                                    )}
+                                                                                    )
+                                                                                </span>
+                                                                            )}
+                                                                        </p>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                </div>
+                                                <p className="font-medium text-gray-900">
+                                                    $
+                                                    {Number(lineTotal).toFixed(
+                                                        2,
+                                                    )}
+                                                </p>
                                             </div>
-                                            <p className="font-medium text-gray-900">
-                                                {(
-                                                    Number(item.price) *
-                                                    item.quantity
-                                                ).toFixed(2)}
-                                            </p>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : items.length > 0 ? (
                                     items.map((item, idx) => (
                                         <div
@@ -358,9 +397,17 @@ export default function Checkout() {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="py-6 text-center text-gray-500 italic">
-                                        Your cart is empty.
-                                    </p>
+                                    <div className="py-8 text-center">
+                                        <p className="text-gray-500 italic">
+                                            Your cart is empty.
+                                        </p>
+                                        <Link
+                                            href="/order"
+                                            className="mt-3 inline-block text-sm font-bold text-blue-600 hover:underline"
+                                        >
+                                            &larr; Browse Menu
+                                        </Link>
+                                    </div>
                                 )}
                             </div>
 
@@ -368,6 +415,7 @@ export default function Checkout() {
                                 <div className="flex justify-between text-lg font-bold text-gray-900">
                                     <span>Total to Pay</span>
                                     <span>
+                                        $
                                         {calc?.subtotal
                                             ? Number(calc.subtotal).toFixed(2)
                                             : '0.00'}

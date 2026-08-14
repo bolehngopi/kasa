@@ -24,6 +24,7 @@ class PermissionSeeder extends Seeder
             'manage products',
             'manage orders',
             'manage customers',
+            'manage store',
         ];
 
         foreach ($permissions as $permission) {
@@ -38,6 +39,7 @@ class PermissionSeeder extends Seeder
             'manage products',
             'manage orders',
             'manage customers',
+            'manage store',
         ]);
 
         // staff

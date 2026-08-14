@@ -24,12 +24,17 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+use App\Http\Controllers\SettingController;
+
 Route::group([
     'prefix' => 'dashboard',
     'middleware' => ['auth'],
 ], function () {
     Route::inertia('/', 'dashboard/index')->name('dashboard');
-    Route::inertia('/settings', 'dashboard/settings')->name('dashboard.settings');
+    Route::get('/settings', [SettingController::class, 'edit'])->name('dashboard.settings');
+    Route::put('/settings/profile', [SettingController::class, 'updateProfile'])->name('dashboard.settings.profile');
+    Route::put('/settings/store', [SettingController::class, 'updateStore'])->name('dashboard.settings.store');
+    Route::put('/settings', [SettingController::class, 'updateStore'])->name('dashboard.settings.update');
     Route::resource('/products', ProductController::class);
     Route::resource('/orders', OrderController::class);
 });

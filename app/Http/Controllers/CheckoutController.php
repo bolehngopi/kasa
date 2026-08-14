@@ -92,15 +92,19 @@ class CheckoutController extends Controller
                 ];
             }
 
-            $total = bcadd($total, bcmul($unitPrice, (string) $item['quantity'], 2), 2);
+            $lineTotal = bcmul($unitPrice, (string) $item['quantity'], 2);
+            $total = bcadd($total, $lineTotal, 2);
 
             $calculatedProducts[] = [
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
                 'image_url' => $product->image_url,
-                'price' => $product->price,
+                'price' => (float) $product->price,
+                'unit_price' => (float) $unitPrice,
+                'line_total' => (float) $lineTotal,
                 'quantity' => (int) $item['quantity'],
+                'notes' => $item['notes'] ?? null,
                 'modifiers' => $appliedModifiers,
             ];
         }
