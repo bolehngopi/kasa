@@ -1,4 +1,4 @@
-import { Head, Link, useHttp, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { getGuestOrders } from '@/routes/invoice';
 import { useOrderStore } from '@/store/order-store';
@@ -14,41 +14,66 @@ export default function InvoiceList({
 
     const { orderNumbers, removeOrder } = useOrderStore();
     const [guestOrders, setGuestOrders] = useState<Order[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(isGuest && orderNumbers.length > 0);
 
-    const guestOrdersHttp = useHttp({ order_numbers: [] as string[] });
+    const safeOrderNumbers = orderNumbers.slice(0, 50);
+    const orderNumbersKey = JSON.stringify(safeOrderNumbers);
 
     useEffect(() => {
         if (!isGuest) {
+            setIsLoading(false);
             return;
         }
 
-        if (orderNumbers.length === 0) {
-            queueMicrotask(() => {
-                setGuestOrders([]);
-                setIsLoading(false);
-            });
-
+        if (safeOrderNumbers.length === 0) {
+            setGuestOrders([]);
+            setIsLoading(false);
             return;
         }
 
-        const fetchOrders = async () => {
-            setIsLoading(true);
-            guestOrdersHttp.setData({ order_numbers: orderNumbers });
+        const controller = new AbortController();
+        setIsLoading(true);
 
-            await guestOrdersHttp.post(getGuestOrders.url(), {
-                onSuccess: (data) => {
-                    setGuestOrders(data as Order[]);
+        fetch(getGuestOrders.url(), {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name="csrf-token"]',
+                        ) as HTMLMetaElement
+                    )?.content || '',
+            },
+            body: JSON.stringify({ order_numbers: safeOrderNumbers }),
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch guest orders');
+                }
+                return res.json();
+            })
+            .then((data) => {
+                setGuestOrders(data as Order[]);
+            })
+            .catch((err) => {
+                if (err.name !== 'AbortError') {
+                    setGuestOrders([]);
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) {
                     setIsLoading(false);
-                },
-                onHttpException: () => {
-                    setIsLoading(false);
-                },
+                }
             });
+
+        return () => {
+            controller.abort();
         };
-
-        fetchOrders();
-    }, [isGuest, orderNumbers, guestOrdersHttp]);
+    }, [isGuest, orderNumbersKey]);
 
     const handleRemoveOrder = (e: React.MouseEvent, orderNumber: string) => {
         e.preventDefault();
