@@ -4,7 +4,7 @@ import Drawer from '@/components/drawer';
 import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
 import type { CartItem } from '@/store/cart-store';
-import type { Category, PaginatedProduct, Product } from '@/types';
+import type { Category, ModifierGroup, PaginatedProduct, Product } from '@/types';
 
 interface OrderingProps {
     products: PaginatedProduct;
@@ -36,9 +36,19 @@ export default function Order({ products, categories }: OrderingProps) {
 
         const defaultModifierIds: number[] = [];
         product.modifier_groups?.forEach((group) => {
+            if (group.is_active === false) return;
+            let singleAdded = false;
             group.modifiers?.forEach((modifier) => {
+                if (modifier.is_active === false) return;
                 if (modifier.is_default && modifier.id !== undefined) {
-                    defaultModifierIds.push(modifier.id);
+                    if (group.selection_type === 'single') {
+                        if (!singleAdded) {
+                            defaultModifierIds.push(modifier.id);
+                            singleAdded = true;
+                        }
+                    } else {
+                        defaultModifierIds.push(modifier.id);
+                    }
                 }
             });
         });
@@ -52,13 +62,93 @@ export default function Order({ products, categories }: OrderingProps) {
         setSelectedProduct(null);
     };
 
-    const toggleModifier = (modifierId: number) => {
-        setSelectedModifiers((prev) =>
-            prev.includes(modifierId)
-                ? prev.filter((id) => id !== modifierId)
-                : [...prev, modifierId],
-        );
+    const toggleModifier = (group: ModifierGroup, modifierId: number) => {
+        setSelectedModifiers((prev) => {
+            const groupModifierIds = (group.modifiers || [])
+                .map((m) => m.id!)
+                .filter(Boolean);
+            const isSelected = prev.includes(modifierId);
+
+            if (group.selection_type === 'single') {
+                if (isSelected) {
+                    const isRequired =
+                        group.is_required || (group.min_selection ?? 0) > 0;
+                    if (isRequired) {
+                        return prev;
+                    }
+                    return prev.filter((id) => !groupModifierIds.includes(id));
+                }
+                const withoutGroup = prev.filter(
+                    (id) => !groupModifierIds.includes(id),
+                );
+                return [...withoutGroup, modifierId];
+            }
+
+            // Multiple selection
+            if (isSelected) {
+                return prev.filter((id) => id !== modifierId);
+            }
+
+            const currentGroupCount = prev.filter((id) =>
+                groupModifierIds.includes(id),
+            ).length;
+            const max =
+                (group.max_selection ?? 0) > 0
+                    ? group.max_selection
+                    : Infinity;
+
+            if (currentGroupCount >= max) {
+                return prev;
+            }
+
+            return [...prev, modifierId];
+        });
     };
+
+    const groupValidation = useMemo(() => {
+        if (!selectedProduct?.modifier_groups) {
+            return { isValid: true, groupErrors: {} as Record<number, string> };
+        }
+
+        let isValid = true;
+        const groupErrors: Record<number, string> = {};
+
+        selectedProduct.modifier_groups.forEach((group) => {
+            if (group.is_active === false) return;
+
+            const groupModifierIds = (group.modifiers || [])
+                .map((m) => m.id!)
+                .filter(Boolean);
+            const selectedCount = selectedModifiers.filter((id) =>
+                groupModifierIds.includes(id),
+            ).length;
+
+            const min =
+                (group.min_selection ?? 0) > 0
+                    ? group.min_selection
+                    : group.is_required
+                      ? 1
+                      : 0;
+
+            const max =
+                group.selection_type === 'single'
+                    ? 1
+                    : (group.max_selection ?? 0) > 0
+                      ? group.max_selection
+                      : Infinity;
+
+            if (selectedCount < min) {
+                isValid = false;
+                groupErrors[group.id] =
+                    min === 1 ? 'Required' : `Select at least ${min}`;
+            } else if (selectedCount > max) {
+                isValid = false;
+                groupErrors[group.id] = `Select at most ${max}`;
+            }
+        });
+
+        return { isValid, groupErrors };
+    }, [selectedProduct, selectedModifiers]);
 
     const currentItemTotal = useMemo(() => {
         if (!selectedProduct) {
@@ -79,7 +169,7 @@ export default function Order({ products, categories }: OrderingProps) {
     }, [selectedProduct, selectedModifiers, quantity]);
 
     const handleConfirmAddToCart = () => {
-        if (!selectedProduct) {
+        if (!selectedProduct || !groupValidation.isValid) {
             return;
         }
 
@@ -194,13 +284,18 @@ export default function Order({ products, categories }: OrderingProps) {
                             </div>
                             <button
                                 onClick={handleConfirmAddToCart}
-                                disabled={selectedProduct.stock === 0}
-                                className="flex h-14 flex-1 items-center justify-between gap-2 rounded-lg bg-blue-600 px-6 font-bold text-white active:bg-blue-800 disabled:bg-gray-400"
+                                disabled={
+                                    selectedProduct.stock === 0 ||
+                                    !groupValidation.isValid
+                                }
+                                className="flex h-14 flex-1 items-center justify-between gap-2 rounded-lg bg-blue-600 px-6 font-bold text-white transition active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
                             >
                                 <span className="text-lg">
                                     {selectedProduct.stock === 0
                                         ? 'Out of Stock'
-                                        : 'Add'}
+                                        : !groupValidation.isValid
+                                          ? 'Select Required Options'
+                                          : 'Add'}
                                 </span>
                                 <span className="text-xl">
                                     ${currentItemTotal.toFixed(2)}
@@ -260,91 +355,203 @@ export default function Order({ products, categories }: OrderingProps) {
                                                     (a.sort_order ?? 0) -
                                                     (b.sort_order ?? 0),
                                             )
-                                            .map((group) => (
-                                                <div key={group.id}>
-                                                    <h3 className="text-lg font-bold tracking-tight text-gray-900 uppercase">
-                                                        {group.name}{' '}
-                                                        {group.is_required ? (
-                                                            <span>*</span>
-                                                        ) : null}
-                                                    </h3>
+                                            .map((group) => {
+                                                const isRequiredGroup =
+                                                    group.is_required ||
+                                                    (group.min_selection ?? 0) >
+                                                        0;
+                                                const groupError =
+                                                    groupValidation.groupErrors[
+                                                        group.id
+                                                    ];
 
-                                                    <div className="mt-3 flex flex-col gap-3">
-                                                        {[
-                                                            ...(group.modifiers ||
-                                                                []),
-                                                        ]
-                                                            .sort(
-                                                                (a, b) =>
-                                                                    (a.sort_order ??
-                                                                        0) -
-                                                                    (b.sort_order ??
-                                                                        0),
-                                                            )
-                                                            .map((modifier) => {
-                                                                const isSelected =
-                                                                    selectedModifiers.includes(
-                                                                        modifier.id!,
-                                                                    );
+                                                const groupModifierIds = (
+                                                    group.modifiers || []
+                                                )
+                                                    .map((m) => m.id!)
+                                                    .filter(Boolean);
+                                                const selectedInGroupCount =
+                                                    selectedModifiers.filter(
+                                                        (id) =>
+                                                            groupModifierIds.includes(
+                                                                id,
+                                                            ),
+                                                    ).length;
+                                                const maxSelection =
+                                                    (group.max_selection ?? 0) >
+                                                    0
+                                                        ? group.max_selection
+                                                        : Infinity;
+                                                const isMaxReached =
+                                                    group.selection_type ===
+                                                        'multiple' &&
+                                                    selectedInGroupCount >=
+                                                        maxSelection;
 
-                                                                return (
-                                                                    <button
-                                                                        key={
-                                                                            modifier.id
-                                                                        }
-                                                                        onClick={() =>
-                                                                            toggleModifier(
+                                                let ruleDescription = '';
+                                                if (
+                                                    group.selection_type ===
+                                                    'single'
+                                                ) {
+                                                    ruleDescription =
+                                                        'Select 1 option';
+                                                } else if (
+                                                    (group.min_selection ?? 0) >
+                                                        0 &&
+                                                    (group.max_selection ?? 0) >
+                                                        0
+                                                ) {
+                                                    ruleDescription = `Select ${group.min_selection} to ${group.max_selection} options`;
+                                                } else if (
+                                                    (group.min_selection ?? 0) >
+                                                    0
+                                                ) {
+                                                    ruleDescription = `Select at least ${group.min_selection} option${group.min_selection > 1 ? 's' : ''}`;
+                                                } else if (
+                                                    (group.max_selection ?? 0) >
+                                                    0
+                                                ) {
+                                                    ruleDescription = `Select up to ${group.max_selection} option${group.max_selection > 1 ? 's' : ''}`;
+                                                } else {
+                                                    ruleDescription =
+                                                        'Select any options';
+                                                }
+
+                                                return (
+                                                    <div key={group.id}>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="text-lg font-bold tracking-tight text-gray-900 uppercase">
+                                                                    {group.name}
+                                                                </h3>
+                                                                {isRequiredGroup ? (
+                                                                    <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700">
+                                                                        Required
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                                                                        Optional
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {groupError && (
+                                                                <span className="text-xs font-bold text-red-600">
+                                                                    {groupError}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <p className="mt-1 text-xs font-medium text-gray-500">
+                                                            {ruleDescription}
+                                                        </p>
+
+                                                        <div className="mt-3 flex flex-col gap-3">
+                                                            {[
+                                                                ...(group.modifiers ||
+                                                                    []),
+                                                            ]
+                                                                .sort(
+                                                                    (a, b) =>
+                                                                        (a.sort_order ??
+                                                                            0) -
+                                                                        (b.sort_order ??
+                                                                            0),
+                                                                )
+                                                                .map(
+                                                                    (
+                                                                        modifier,
+                                                                    ) => {
+                                                                        const isSelected =
+                                                                            selectedModifiers.includes(
                                                                                 modifier.id!,
-                                                                            )
-                                                                        }
-                                                                        className={`flex w-full items-center justify-between rounded-lg border-2 p-4 text-left ${
-                                                                            isSelected
-                                                                                ? 'border-blue-600 bg-blue-50'
-                                                                                : 'border-gray-200 bg-white active:bg-gray-50'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div
-                                                                                className={`flex h-6 w-6 items-center justify-center rounded border-2 ${
+                                                                            );
+                                                                        const isDisabled =
+                                                                            !isSelected &&
+                                                                            isMaxReached;
+
+                                                                        return (
+                                                                            <button
+                                                                                key={
+                                                                                    modifier.id
+                                                                                }
+                                                                                type="button"
+                                                                                disabled={
+                                                                                    isDisabled
+                                                                                }
+                                                                                onClick={() =>
+                                                                                    toggleModifier(
+                                                                                        group,
+                                                                                        modifier.id!,
+                                                                                    )
+                                                                                }
+                                                                                className={`flex w-full items-center justify-between rounded-lg border-2 p-4 text-left transition-colors ${
                                                                                     isSelected
-                                                                                        ? 'border-blue-600 bg-blue-600'
-                                                                                        : 'border-gray-400 bg-white'
+                                                                                        ? 'border-blue-600 bg-blue-50'
+                                                                                        : isDisabled
+                                                                                          ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
+                                                                                          : 'border-gray-200 bg-white hover:border-gray-300 active:bg-gray-50'
                                                                                 }`}
                                                                             >
-                                                                                {isSelected && (
-                                                                                    <svg
-                                                                                        className="h-4 w-4 text-white"
-                                                                                        viewBox="0 0 20 20"
-                                                                                        fill="currentColor"
-                                                                                    >
-                                                                                        <path
-                                                                                            fillRule="evenodd"
-                                                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                                            clipRule="evenodd"
-                                                                                        />
-                                                                                    </svg>
-                                                                                )}
-                                                                            </div>
-                                                                            <span className="text-base font-bold text-gray-900">
-                                                                                {
-                                                                                    modifier.name
-                                                                                }
-                                                                            </span>
-                                                                        </div>
-                                                                        <span className="text-base font-bold text-gray-600">
-                                                                            {Number(
-                                                                                modifier.price,
-                                                                            ) >
-                                                                            0
-                                                                                ? `+ $${Number(modifier.price).toFixed(2)}`
-                                                                                : 'Free'}
-                                                                        </span>
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                                                <div className="flex items-center gap-3">
+                                                                                    {group.selection_type ===
+                                                                                    'single' ? (
+                                                                                        <div
+                                                                                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+                                                                                                isSelected
+                                                                                                    ? 'border-blue-600 bg-blue-600'
+                                                                                                    : 'border-gray-400 bg-white'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {isSelected && (
+                                                                                                <div className="h-2 w-2 rounded-full bg-white" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div
+                                                                                            className={`flex h-6 w-6 items-center justify-center rounded border-2 ${
+                                                                                                isSelected
+                                                                                                    ? 'border-blue-600 bg-blue-600'
+                                                                                                    : 'border-gray-400 bg-white'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {isSelected && (
+                                                                                                <svg
+                                                                                                    className="h-4 w-4 text-white"
+                                                                                                    viewBox="0 0 20 20"
+                                                                                                    fill="currentColor"
+                                                                                                >
+                                                                                                    <path
+                                                                                                        fillRule="evenodd"
+                                                                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                                                        clipRule="evenodd"
+                                                                                                    />
+                                                                                                </svg>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <span className="text-base font-bold text-gray-900">
+                                                                                        {
+                                                                                            modifier.name
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className="text-base font-bold text-gray-600">
+                                                                                    {Number(
+                                                                                        modifier.price,
+                                                                                    ) >
+                                                                                    0
+                                                                                        ? `+ $${Number(modifier.price).toFixed(2)}`
+                                                                                        : 'Free'}
+                                                                                </span>
+                                                                            </button>
+                                                                        );
+                                                                    },
+                                                                )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                     </div>
                                 )}
 

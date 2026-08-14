@@ -21,11 +21,11 @@ class ModifierGroupFactory extends Factory
             'name' => $this->faker->word(),
             'description' => $this->faker->sentence(),
             'sort_order' => $this->faker->randomDigit(),
-            'is_active' => $this->faker->boolean(),
-            'is_required' => $this->faker->boolean(),
-            'min_selection' => $this->faker->randomDigit(),
-            'max_selection' => $this->faker->randomDigit(),
-            'selection_type' => $this->faker->randomElement(['single', 'multiple']),
+            'is_active' => true,
+            'is_required' => false,
+            'min_selection' => 0,
+            'max_selection' => 0,
+            'selection_type' => 'multiple',
         ];
     }
 }
