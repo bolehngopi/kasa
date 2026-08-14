@@ -224,7 +224,7 @@ export default function ViewOrder() {
                                                     <div className="flex shrink-0 flex-col items-end gap-3">
                                                         <span className="text-xl font-black text-blue-700">
                                                             {calculatedItem
-                                                                ? `$${(calculatedItem.line_total ?? Number(calculatedItem.unit_price ?? calculatedItem.price || 0) * cartItem.quantity).toFixed(2)}`
+                                                                ? `$${(calculatedItem.line_total ?? Number((calculatedItem.unit_price ?? calculatedItem.price) || 0) * cartItem.quantity).toFixed(2)}`
                                                                 : '...'}
                                                         </span>
 
