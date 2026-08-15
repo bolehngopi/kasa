@@ -48,6 +48,7 @@ export default function Checkout() {
         if (items.length === 0) {
             setCalc(null);
             setIsCalculating(false);
+
             return;
         }
 
@@ -58,7 +59,7 @@ export default function Checkout() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
             },
             body: JSON.stringify(mapCartItemsToPayload(items)),
@@ -313,8 +314,7 @@ export default function Checkout() {
                                             item.line_total ??
                                             Number(
                                                 item.unit_price ?? item.price,
-                                            ) *
-                                                item.quantity;
+                                            ) * item.quantity;
 
                                         return (
                                             <div
@@ -329,7 +329,7 @@ export default function Checkout() {
                                                         Qty: {item.quantity}
                                                     </p>
                                                     {item.notes && (
-                                                        <p className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800 border border-amber-200">
+                                                        <p className="mt-1 inline-block rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">
                                                             Note: {item.notes}
                                                         </p>
                                                     )}
@@ -362,6 +362,7 @@ export default function Checkout() {
                                                                                     ).toFixed(
                                                                                         2,
                                                                                     )}
+
                                                                                     )
                                                                                 </span>
                                                                             )}

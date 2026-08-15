@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { encryptedStorage } from '@/lib/encrypted-storage';
 import type { StoreOrderRequest } from '@/types';
 
 export type CartItem = StoreOrderRequest['order_products'][number];
@@ -96,7 +97,7 @@ export const useCart = create(
         }),
         {
             name: CART_KEY,
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => encryptedStorage),
         },
     ),
 );

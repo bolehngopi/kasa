@@ -14,7 +14,9 @@ export default function InvoiceList({
 
     const { orderNumbers, removeOrder } = useOrderStore();
     const [guestOrders, setGuestOrders] = useState<Order[]>([]);
-    const [isLoading, setIsLoading] = useState(isGuest && orderNumbers.length > 0);
+    const [isLoading, setIsLoading] = useState(
+        isGuest && orderNumbers.length > 0,
+    );
 
     const safeOrderNumbers = orderNumbers.slice(0, 50);
     const orderNumbersKey = JSON.stringify(safeOrderNumbers);
@@ -22,12 +24,14 @@ export default function InvoiceList({
     useEffect(() => {
         if (!isGuest) {
             setIsLoading(false);
+
             return;
         }
 
         if (safeOrderNumbers.length === 0) {
             setGuestOrders([]);
             setIsLoading(false);
+
             return;
         }
 
@@ -39,7 +43,7 @@ export default function InvoiceList({
             signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN':
                     (
@@ -54,6 +58,7 @@ export default function InvoiceList({
                 if (!res.ok) {
                     throw new Error('Failed to fetch guest orders');
                 }
+
                 return res.json();
             })
             .then((data) => {

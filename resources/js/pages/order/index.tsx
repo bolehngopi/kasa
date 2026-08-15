@@ -4,7 +4,12 @@ import Drawer from '@/components/drawer';
 import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
 import type { CartItem } from '@/store/cart-store';
-import type { Category, ModifierGroup, PaginatedProduct, Product } from '@/types';
+import type {
+    Category,
+    ModifierGroup,
+    PaginatedProduct,
+    Product,
+} from '@/types';
 
 interface OrderingProps {
     products: PaginatedProduct;
@@ -36,10 +41,16 @@ export default function Order({ products, categories }: OrderingProps) {
 
         const defaultModifierIds: number[] = [];
         product.modifier_groups?.forEach((group) => {
-            if (group.is_active === false) return;
+            if (group.is_active === false) {
+return;
+}
+
             let singleAdded = false;
             group.modifiers?.forEach((modifier) => {
-                if (modifier.is_active === false) return;
+                if (modifier.is_active === false) {
+return;
+}
+
                 if (modifier.is_default && modifier.id !== undefined) {
                     if (group.selection_type === 'single') {
                         if (!singleAdded) {
@@ -73,14 +84,18 @@ export default function Order({ products, categories }: OrderingProps) {
                 if (isSelected) {
                     const isRequired =
                         group.is_required || (group.min_selection ?? 0) > 0;
+
                     if (isRequired) {
                         return prev;
                     }
+
                     return prev.filter((id) => !groupModifierIds.includes(id));
                 }
+
                 const withoutGroup = prev.filter(
                     (id) => !groupModifierIds.includes(id),
                 );
+
                 return [...withoutGroup, modifierId];
             }
 
@@ -93,9 +108,7 @@ export default function Order({ products, categories }: OrderingProps) {
                 groupModifierIds.includes(id),
             ).length;
             const max =
-                (group.max_selection ?? 0) > 0
-                    ? group.max_selection
-                    : Infinity;
+                (group.max_selection ?? 0) > 0 ? group.max_selection : Infinity;
 
             if (currentGroupCount >= max) {
                 return prev;
@@ -114,7 +127,9 @@ export default function Order({ products, categories }: OrderingProps) {
         const groupErrors: Record<number, string> = {};
 
         selectedProduct.modifier_groups.forEach((group) => {
-            if (group.is_active === false) return;
+            if (group.is_active === false) {
+return;
+}
 
             const groupModifierIds = (group.modifiers || [])
                 .map((m) => m.id!)
@@ -389,6 +404,7 @@ export default function Order({ products, categories }: OrderingProps) {
                                                         maxSelection;
 
                                                 let ruleDescription = '';
+
                                                 if (
                                                     group.selection_type ===
                                                     'single'

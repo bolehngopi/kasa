@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { edit } from '@/routes/products';
 import { getStockBadge } from '@/lib/utils';
+import { edit } from '@/routes/products';
 import type { Product } from '@/types';
 
 export default function ProductDetail({ product }: { product: Product }) {

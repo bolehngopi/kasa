@@ -1,8 +1,3 @@
-import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-import { logout } from '@/routes';
-import { useCart } from '@/store/cart-store';
 import BookOpenIcon from '@iconify-react/lucide/book-open';
 import LayoutDashboardIcon from '@iconify-react/lucide/layout-dashboard';
 import LogOutIcon from '@iconify-react/lucide/log-out';
@@ -10,6 +5,11 @@ import MenuIcon from '@iconify-react/lucide/menu';
 import ReceiptIcon from '@iconify-react/lucide/receipt';
 import ShoppingBagIcon from '@iconify-react/lucide/shopping-bag';
 import XIcon from '@iconify-react/lucide/x';
+import { Link, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { logout } from '@/routes';
+import { useCart } from '@/store/cart-store';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const { url, props } = usePage();
@@ -26,6 +26,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         if (href === '/') {
             return url === '/';
         }
+
         return url.startsWith(href);
     };
 
@@ -47,7 +48,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <Link
                         href="/order"
                         onClick={() => setSidebarOpen(false)}
-                        className="flex items-center gap-2.5 font-black tracking-tight text-gray-900 text-xl"
+                        className="flex items-center gap-2.5 text-xl font-black tracking-tight text-gray-900"
                     >
                         <span>Kasa</span>
                     </Link>
@@ -164,7 +165,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <div className="flex items-center gap-3">
                     <Link
                         href="/order/view-order"
-                        className="relative flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm font-bold text-gray-800 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 shadow-2xs"
+                        className="relative flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm font-bold text-gray-800 shadow-2xs transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
                     >
                         <div className="relative flex items-center justify-center">
                             <ShoppingBagIcon className="h-5 w-5 text-gray-700" />
@@ -200,7 +201,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </div>
             </header>
 
-            <main className="flex-1 w-full">{children}</main>
+            <main className="w-full flex-1">{children}</main>
         </div>
     );
 }

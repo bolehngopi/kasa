@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { encryptedStorage } from '@/lib/encrypted-storage';
 
 interface OrderState {
     orderNumbers: string[];
@@ -35,6 +36,7 @@ export const useOrderStore = create<OrderState>()(
         }),
         {
             name: 'orders',
+            storage: createJSONStorage(() => encryptedStorage),
         },
     ),
 );

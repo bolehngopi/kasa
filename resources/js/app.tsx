@@ -1,6 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
-import AuthLayout from './layouts/auth-layout';
 import AppLayout from './layouts/app-layout';
+import AuthLayout from './layouts/auth-layout';
 import DashboardLayout from './layouts/dashboard-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

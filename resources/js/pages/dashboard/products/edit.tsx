@@ -110,7 +110,8 @@ export default function EditProduct({
                     Edit Product: {product.name}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Update product information, inventory, and customization options.
+                    Update product information, inventory, and customization
+                    options.
                 </p>
             </div>
 
@@ -317,7 +318,8 @@ export default function EditProduct({
                                             className="h-12 w-12 rounded-lg border border-gray-200 object-cover"
                                         />
                                         <span className="text-xs text-gray-500">
-                                            Current image (upload new file below to replace)
+                                            Current image (upload new file below
+                                            to replace)
                                         </span>
                                     </div>
                                 )}

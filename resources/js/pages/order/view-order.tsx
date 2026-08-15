@@ -42,6 +42,7 @@ export default function ViewOrder() {
         if (items.length === 0) {
             setCalc(null);
             setLoading(false);
+
             return;
         }
 
@@ -53,7 +54,7 @@ export default function ViewOrder() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
             },
             body: JSON.stringify(mapCartItemsToPayload(items)),
@@ -62,6 +63,7 @@ export default function ViewOrder() {
                 if (!res.ok) {
                     return res.text().then((text) => Promise.reject(text));
                 }
+
                 return res.json();
             })
             .then((data) => {

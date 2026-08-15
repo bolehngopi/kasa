@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import { getStatusBadge } from '@/lib/utils';
 import { index as indexOrders, update as updateOrder } from '@/routes/orders';
 import type { Order } from '@/types';
-import { useState } from 'react';
 
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending' },
@@ -18,7 +18,9 @@ export default function OrderShow({ order }: { order: Order }) {
     const [selectedStatus, setSelectedStatus] = useState(order.status);
 
     const handleStatusUpdate = (newStatus: string) => {
-        if (updatingStatus || newStatus === order.status) return;
+        if (updatingStatus || newStatus === order.status) {
+return;
+}
 
         setUpdatingStatus(true);
         router.patch(
@@ -74,47 +76,59 @@ export default function OrderShow({ order }: { order: Order }) {
 
                 {/* Status Quick Actions & Switcher */}
                 <div className="flex flex-wrap items-center gap-2">
-                    {order.status !== 'completed' && order.status !== 'cancelled' && (
-                        <>
-                            {(order.status === 'pending' || order.status === 'payment_pending') && (
+                    {order.status !== 'completed' &&
+                        order.status !== 'cancelled' && (
+                            <>
+                                {(order.status === 'pending' ||
+                                    order.status === 'payment_pending') && (
+                                    <button
+                                        type="button"
+                                        disabled={updatingStatus}
+                                        onClick={() =>
+                                            handleStatusUpdate('paid')
+                                        }
+                                        className="inline-flex items-center rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                                    >
+                                        {updatingStatus
+                                            ? 'Updating...'
+                                            : 'Mark as Paid'}
+                                    </button>
+                                )}
+
+                                {order.status === 'paid' && (
+                                    <button
+                                        type="button"
+                                        disabled={updatingStatus}
+                                        onClick={() =>
+                                            handleStatusUpdate('completed')
+                                        }
+                                        className="inline-flex items-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {updatingStatus
+                                            ? 'Updating...'
+                                            : 'Mark as Completed'}
+                                    </button>
+                                )}
+
                                 <button
                                     type="button"
                                     disabled={updatingStatus}
-                                    onClick={() => handleStatusUpdate('paid')}
-                                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                                    onClick={() =>
+                                        handleStatusUpdate('cancelled')
+                                    }
+                                    className="inline-flex items-center rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
                                 >
-                                    {updatingStatus ? 'Updating...' : 'Mark as Paid'}
+                                    Cancel Order
                                 </button>
-                            )}
-
-                            {order.status === 'paid' && (
-                                <button
-                                    type="button"
-                                    disabled={updatingStatus}
-                                    onClick={() => handleStatusUpdate('completed')}
-                                    className="inline-flex items-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {updatingStatus ? 'Updating...' : 'Mark as Completed'}
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                disabled={updatingStatus}
-                                onClick={() => handleStatusUpdate('cancelled')}
-                                className="inline-flex items-center rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
-                            >
-                                Cancel Order
-                            </button>
-                        </>
-                    )}
+                            </>
+                        )}
 
                     <div className="relative">
                         <select
                             value={selectedStatus}
                             disabled={updatingStatus}
                             onChange={(e) => handleStatusUpdate(e.target.value)}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
                         >
                             {STATUS_OPTIONS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>
@@ -301,4 +315,3 @@ export default function OrderShow({ order }: { order: Order }) {
         </>
     );
 }
-
