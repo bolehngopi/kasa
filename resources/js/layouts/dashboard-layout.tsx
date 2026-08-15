@@ -12,7 +12,7 @@ const navigation: NavItem[] = [
 ];
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
-    const { url, props } = usePage<any>();
+    const { url, props } = usePage();
     const user = props.auth?.user;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 

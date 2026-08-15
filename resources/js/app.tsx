@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import AuthLayout from './layouts/auth-layout';
 import AppLayout from './layouts/app-layout';
 import DashboardLayout from './layouts/dashboard-layout';
 
@@ -11,6 +12,8 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            case name.startsWith('auth/'):
+                return AuthLayout;
             case name.startsWith('dashboard/'):
                 return DashboardLayout;
             default:
