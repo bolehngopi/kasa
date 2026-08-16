@@ -4,7 +4,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('ordering page returns active categories and active products', function () {
+test('ordering page returns active categories with active products', function () {
     $activeCategory = Category::factory()->create(['name' => 'Active Drinks', 'is_active' => true]);
     $inactiveCategory = Category::factory()->create(['name' => 'Inactive Pastries', 'is_active' => false]);
 
@@ -26,40 +26,41 @@ test('ordering page returns active categories and active products', function () 
         ->component('order/index')
         ->has('categories', 1)
         ->where('categories.0.id', $activeCategory->id)
-        ->has('products.data', 1)
-        ->where('products.data.0.id', $activeProduct->id)
+        ->has('categories.0.products', 1)
+        ->where('categories.0.products.0.id', $activeProduct->id)
     );
 });
 
-test('ordering page filters products by category_id', function () {
-    $catA = Category::factory()->create(['is_active' => true]);
-    $catB = Category::factory()->create(['is_active' => true]);
+test('ordering page groups products under their respective categories', function () {
+    $catA = Category::factory()->create(['name' => 'Category A', 'is_active' => true]);
+    $catB = Category::factory()->create(['name' => 'Category B', 'is_active' => true]);
 
     $prodA = Product::factory()->create(['category_id' => $catA->id, 'is_active' => true]);
     $prodB = Product::factory()->create(['category_id' => $catB->id, 'is_active' => true]);
 
-    $response = $this->get(route('order.index', ['category_id' => $catA->id]));
+    $response = $this->get(route('order.index'));
 
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('order/index')
-        ->has('products.data', 1)
-        ->where('products.data.0.id', $prodA->id)
+        ->has('categories', 2)
+        ->where('categories.0.id', $catA->id)
+        ->has('categories.0.products', 1)
+        ->where('categories.1.id', $catB->id)
+        ->has('categories.1.products', 1)
     );
 });
 
-test('ordering page includes subcategory products when parent category is selected', function () {
-    $parentCat = Category::factory()->create(['is_active' => true]);
-    $childCat = Category::factory()->create(['parent_id' => $parentCat->id, 'is_active' => true]);
+test('ordering page includes uncategorized items section when products without category exist', function () {
+    $uncategorizedProd = Product::factory()->create(['category_id' => null, 'is_active' => true]);
 
-    $parentProd = Product::factory()->create(['category_id' => $parentCat->id, 'is_active' => true]);
-    $childProd = Product::factory()->create(['category_id' => $childCat->id, 'is_active' => true]);
-
-    $response = $this->get(route('order.index', ['category_id' => $parentCat->id]));
+    $response = $this->get(route('order.index'));
 
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('order/index')
-        ->has('products.data', 2)
+        ->has('categories', 1)
+        ->where('categories.0.id', 'uncategorized')
+        ->has('categories.0.products', 1)
     );
 });

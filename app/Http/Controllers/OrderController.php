@@ -156,30 +156,48 @@ class OrderController extends Controller
 
     public function ordering(Request $request)
     {
-        $selectedCat = array_filter((array) $request->input('category_id', []));
+        $categories = Category::where('is_active', true)
+            ->with([
+                'products' => function ($query) {
+                    $query->where('is_active', true)
+                        ->with([
+                            'modifierGroups' => function ($q) {
+                                $q->where('is_active', true);
+                            },
+                            'modifierGroups.modifiers' => function ($q) {
+                                $q->where('is_active', true);
+                            },
+                        ]);
+                },
+            ])
+            ->get()
+            ->filter(fn ($category) => $category->products->isNotEmpty())
+            ->values();
 
-        $product = Product::query()->where('is_active', true);
+        $uncategorizedProducts = Product::where('is_active', true)
+            ->whereNull('category_id')
+            ->with([
+                'modifierGroups' => function ($q) {
+                    $q->where('is_active', true);
+                },
+                'modifierGroups.modifiers' => function ($q) {
+                    $q->where('is_active', true);
+                },
+            ])
+            ->get();
 
-        if (! empty($selectedCat)) {
-            $childCatIds = Category::whereIn('parent_id', $selectedCat)
-                ->pluck('id')
-                ->toArray();
-
-            $allCatIds = array_unique(array_merge($selectedCat, $childCatIds));
-
-            $product->whereIn('category_id', $allCatIds);
+        if ($uncategorizedProducts->isNotEmpty()) {
+            $categories->push([
+                'id' => 'uncategorized',
+                'name' => 'Other Items',
+                'description' => 'Uncategorized products',
+                'is_active' => true,
+                'products' => $uncategorizedProducts,
+            ]);
         }
 
         return inertia('order/index', [
-            'products' => $product->with([
-                'modifierGroups' => function ($query) {
-                    $query->where('is_active', true);
-                },
-                'modifierGroups.modifiers' => function ($query) {
-                    $query->where('is_active', true);
-                },
-            ])->paginate(10)->withQueryString(),
-            'categories' => Category::where('is_active', true)->with('parent', 'children')->get(),
+            'categories' => $categories,
         ]);
     }
 }

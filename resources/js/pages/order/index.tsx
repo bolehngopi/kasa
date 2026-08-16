@@ -1,23 +1,24 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
 import Drawer from '@/components/drawer';
-import order from '@/routes/order';
 import { useCart } from '@/store/cart-store';
 import type { CartItem } from '@/store/cart-store';
 import type {
     Category,
     ModifierGroup,
-    PaginatedProduct,
     Product,
 } from '@/types';
 
-interface OrderingProps {
-    products: PaginatedProduct;
-    categories: Category[];
+interface CategoryWithProducts extends Category {
+    id: number | string;
+    products: Product[];
 }
 
-export default function Order({ products, categories }: OrderingProps) {
-    const { url } = usePage();
+interface OrderingProps {
+    categories: CategoryWithProducts[];
+}
+
+export default function Order({ categories }: OrderingProps) {
     const { items, add: addToCart } = useCart();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
         null,
@@ -25,20 +26,60 @@ export default function Order({ products, categories }: OrderingProps) {
     const [selectedModifiers, setSelectedModifiers] = useState<number[]>([]);
     const [quantity, setQuantity] = useState<number>(1);
     const [notes, setNotes] = useState<string>('');
+    const [activeCategoryId, setActiveCategoryId] = useState<string | number | null>(
+        categories && categories.length > 0 ? categories[0].id : null,
+    );
 
-    const searchParams = useMemo(() => {
-        const query = url.includes('?') ? url.split('?')[1] : '';
-        return new URLSearchParams(query);
-    }, [url]);
+    useEffect(() => {
+        if (!categories || categories.length === 0) return;
 
-    const currentCategoryId = searchParams.get('category_id');
+        const handleObserver = (entries: IntersectionObserverEntry[]) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const catId = entry.target.getAttribute('data-category-id');
+                    if (catId) {
+                        setActiveCategoryId(catId);
+                    }
+                }
+            });
+        };
 
-    const handleCategoryClick = (categoryId?: number) => {
-        router.get(
-            order.index.url(),
-            categoryId ? { category_id: categoryId } : {},
-            { preserveState: true, preserveScroll: true, only: ['products'] },
-        );
+        const observer = new IntersectionObserver(handleObserver, {
+            root: null,
+            rootMargin: '-140px 0px -50% 0px',
+            threshold: 0.1,
+        });
+
+        categories.forEach((cat) => {
+            const el = document.getElementById(`category-${cat.id}`);
+            if (el) {
+                observer.observe(el);
+            }
+        });
+
+        return () => observer.disconnect();
+    }, [categories]);
+
+    useEffect(() => {
+        if (!activeCategoryId) return;
+        const activeTab = document.getElementById(`tab-${activeCategoryId}`);
+        if (activeTab) {
+            activeTab.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+            });
+        }
+    }, [activeCategoryId]);
+
+    const scrollToCategory = (catId: string | number) => {
+        setActiveCategoryId(catId);
+        const element = document.getElementById(`category-${catId}`);
+        if (element) {
+            const yOffset = -135;
+            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
     };
 
     const openDrawer = (product: Product) => {
@@ -210,68 +251,98 @@ export default function Order({ products, categories }: OrderingProps) {
         <>
             <Head title="Point of Sale" />
 
-            <div className="sticky z-10 border-b border-gray-300 bg-white shadow-sm">
+            <div className="sticky top-16 z-20 border-b border-gray-300 bg-white/95 backdrop-blur-md shadow-sm">
                 <div className="scrollbar-hide flex gap-2 overflow-x-auto p-3">
-                    <button
-                        onClick={() => handleCategoryClick()}
-                        className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${!currentCategoryId
-                                ? 'border-blue-700 bg-blue-600 text-white'
-                                : 'border-gray-300 bg-white text-gray-700 active:bg-gray-100'
-                            }`}
-                    >
-                        All Categories
-                    </button>
-                    {categories.map((category) => (
-                        <button
-                            key={category.id}
-                            onClick={() => handleCategoryClick(category.id)}
-                            className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${currentCategoryId && Number(currentCategoryId) === category.id
-                                    ? 'border-blue-700 bg-blue-600 text-white'
-                                    : 'border-gray-300 bg-white text-gray-700 active:bg-gray-100'
+                    {categories.map((category) => {
+                        const isActive = String(activeCategoryId) === String(category.id);
+                        return (
+                            <button
+                                key={category.id}
+                                id={`tab-${category.id}`}
+                                onClick={() => scrollToCategory(category.id)}
+                                className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                                    isActive
+                                        ? 'border-blue-700 bg-blue-600 text-white shadow-md scale-[1.02]'
+                                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 active:scale-95'
                                 }`}
-                        >
-                            {category.name}
-                        </button>
-                    ))}
+                            >
+                                <span>{category.name}</span>
+                                <span
+                                    className={`rounded-full px-2 py-0.5 text-xs font-extrabold ${
+                                        isActive
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-gray-100 text-gray-600'
+                                    }`}
+                                >
+                                    {category.products?.length || 0}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {products.data.map((product) => (
-                        <button
-                            key={product.id}
-                            onClick={() => openDrawer(product)}
-                            className="flex cursor-pointer flex-col overflow-hidden rounded-lg border border-gray-300 bg-white text-left active:border-blue-500 active:bg-blue-50"
-                        >
-                            <div className="relative aspect-square w-full bg-gray-100">
-                                <img
-                                    src={
-                                        product.image_url ||
-                                        `https://dummyimage.com/400x400/e5e7eb/9ca3af?text=${encodeURIComponent(product.name)}`
-                                    }
-                                    alt={product.name}
-                                    className="h-full w-full object-cover"
-                                />
-                                {product.stock <= 5 && (
-                                    <div className="absolute top-0 right-0 bg-red-600 px-2 py-1 text-xs font-bold text-white">
-                                        {product.stock === 0
-                                            ? 'OUT OF STOCK'
-                                            : `LEFT: ${product.stock}`}
-                                    </div>
+            <div className="flex-1 p-4 sm:p-6 space-y-10">
+                {categories.map((category) => (
+                    <section
+                        key={category.id}
+                        id={`category-${category.id}`}
+                        data-category-id={category.id}
+                        className="scroll-mt-24"
+                    >
+                        <div className="flex items-center justify-between border-b border-gray-300 pb-3 mb-6">
+                            <div>
+                                <h2 className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
+                                    {category.name}
+                                </h2>
+                                {category.description && (
+                                    <p className="mt-1 text-sm font-medium text-gray-500">
+                                        {category.description}
+                                    </p>
                                 )}
                             </div>
-                            <div className="flex flex-1 flex-col justify-between p-3">
-                                <h3 className="line-clamp-2 text-sm leading-tight font-bold text-gray-900">
-                                    {product.name}
-                                </h3>
-                                <p className="mt-2 text-base font-black text-blue-700">
-                                    ${Number(product.price).toFixed(2)}
-                                </p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
+                            <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                                {category.products?.length || 0} {category.products?.length === 1 ? 'Item' : 'Items'}
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                            {category.products?.map((product) => (
+                                <button
+                                    key={product.id}
+                                    onClick={() => openDrawer(product)}
+                                    className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-300 bg-white text-left shadow-sm transition hover:border-blue-500 hover:shadow-md active:scale-[0.98]"
+                                >
+                                    <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
+                                        <img
+                                            src={
+                                                product.image_url ||
+                                                `https://dummyimage.com/400x400/e5e7eb/9ca3af?text=${encodeURIComponent(product.name)}`
+                                            }
+                                            alt={product.name}
+                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        />
+                                        {product.stock <= 5 && (
+                                            <div className="absolute top-2 right-2 rounded bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase text-white shadow-sm">
+                                                {product.stock === 0
+                                                    ? 'OUT OF STOCK'
+                                                    : `LEFT: ${product.stock}`}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-1 flex-col justify-between p-3.5">
+                                        <h3 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 group-hover:text-blue-600">
+                                            {product.name}
+                                        </h3>
+                                        <p className="mt-2 text-base font-black text-blue-700">
+                                            ${Number(product.price).toFixed(2)}
+                                        </p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                ))}
             </div>
 
             <Drawer
