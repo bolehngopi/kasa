@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import Drawer from '@/components/drawer';
 import order from '@/routes/order';
@@ -17,6 +17,7 @@ interface OrderingProps {
 }
 
 export default function Order({ products, categories }: OrderingProps) {
+    const { url } = usePage();
     const { items, add: addToCart } = useCart();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
         null,
@@ -25,8 +26,12 @@ export default function Order({ products, categories }: OrderingProps) {
     const [quantity, setQuantity] = useState<number>(1);
     const [notes, setNotes] = useState<string>('');
 
-    const currentUrlParams = new URLSearchParams(window.location.search);
-    const currentCategoryId = currentUrlParams.get('category_id');
+    const searchParams = useMemo(() => {
+        const query = url.includes('?') ? url.split('?')[1] : '';
+        return new URLSearchParams(query);
+    }, [url]);
+
+    const currentCategoryId = searchParams.get('category_id');
 
     const handleCategoryClick = (categoryId?: number) => {
         router.get(
@@ -42,14 +47,14 @@ export default function Order({ products, categories }: OrderingProps) {
         const defaultModifierIds: number[] = [];
         product.modifier_groups?.forEach((group) => {
             if (group.is_active === false) {
-return;
-}
+                return;
+            }
 
             let singleAdded = false;
             group.modifiers?.forEach((modifier) => {
                 if (modifier.is_active === false) {
-return;
-}
+                    return;
+                }
 
                 if (modifier.is_default && modifier.id !== undefined) {
                     if (group.selection_type === 'single') {
@@ -99,7 +104,6 @@ return;
                 return [...withoutGroup, modifierId];
             }
 
-            // Multiple selection
             if (isSelected) {
                 return prev.filter((id) => id !== modifierId);
             }
@@ -128,8 +132,8 @@ return;
 
         selectedProduct.modifier_groups.forEach((group) => {
             if (group.is_active === false) {
-return;
-}
+                return;
+            }
 
             const groupModifierIds = (group.modifiers || [])
                 .map((m) => m.id!)
@@ -142,15 +146,15 @@ return;
                 (group.min_selection ?? 0) > 0
                     ? group.min_selection
                     : group.is_required
-                      ? 1
-                      : 0;
+                        ? 1
+                        : 0;
 
             const max =
                 group.selection_type === 'single'
                     ? 1
                     : (group.max_selection ?? 0) > 0
-                      ? group.max_selection
-                      : Infinity;
+                        ? group.max_selection
+                        : Infinity;
 
             if (selectedCount < min) {
                 isValid = false;
@@ -210,11 +214,10 @@ return;
                 <div className="scrollbar-hide flex gap-2 overflow-x-auto p-3">
                     <button
                         onClick={() => handleCategoryClick()}
-                        className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${
-                            !currentCategoryId
+                        className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${!currentCategoryId
                                 ? 'border-blue-700 bg-blue-600 text-white'
                                 : 'border-gray-300 bg-white text-gray-700 active:bg-gray-100'
-                        }`}
+                            }`}
                     >
                         All Categories
                     </button>
@@ -222,11 +225,10 @@ return;
                         <button
                             key={category.id}
                             onClick={() => handleCategoryClick(category.id)}
-                            className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${
-                                Number(currentCategoryId) === category.id
+                            className={`shrink-0 rounded-md border px-6 py-3 text-sm font-bold whitespace-nowrap ${currentCategoryId && Number(currentCategoryId) === category.id
                                     ? 'border-blue-700 bg-blue-600 text-white'
                                     : 'border-gray-300 bg-white text-gray-700 active:bg-gray-100'
-                            }`}
+                                }`}
                         >
                             {category.name}
                         </button>
@@ -309,8 +311,8 @@ return;
                                     {selectedProduct.stock === 0
                                         ? 'Out of Stock'
                                         : !groupValidation.isValid
-                                          ? 'Select Required Options'
-                                          : 'Add'}
+                                            ? 'Select Required Options'
+                                            : 'Add'}
                                 </span>
                                 <span className="text-xl">
                                     ${currentItemTotal.toFixed(2)}
@@ -374,10 +376,10 @@ return;
                                                 const isRequiredGroup =
                                                     group.is_required ||
                                                     (group.min_selection ?? 0) >
-                                                        0;
+                                                    0;
                                                 const groupError =
                                                     groupValidation.groupErrors[
-                                                        group.id
+                                                    group.id
                                                     ];
 
                                                 const groupModifierIds = (
@@ -394,14 +396,14 @@ return;
                                                     ).length;
                                                 const maxSelection =
                                                     (group.max_selection ?? 0) >
-                                                    0
+                                                        0
                                                         ? group.max_selection
                                                         : Infinity;
                                                 const isMaxReached =
                                                     group.selection_type ===
-                                                        'multiple' &&
+                                                    'multiple' &&
                                                     selectedInGroupCount >=
-                                                        maxSelection;
+                                                    maxSelection;
 
                                                 let ruleDescription = '';
 
@@ -413,9 +415,9 @@ return;
                                                         'Select 1 option';
                                                 } else if (
                                                     (group.min_selection ?? 0) >
-                                                        0 &&
+                                                    0 &&
                                                     (group.max_selection ?? 0) >
-                                                        0
+                                                    0
                                                 ) {
                                                     ruleDescription = `Select ${group.min_selection} to ${group.max_selection} options`;
                                                 } else if (
@@ -501,23 +503,21 @@ return;
                                                                                         modifier.id!,
                                                                                     )
                                                                                 }
-                                                                                className={`flex w-full items-center justify-between rounded-lg border-2 p-4 text-left transition-colors ${
-                                                                                    isSelected
+                                                                                className={`flex w-full items-center justify-between rounded-lg border-2 p-4 text-left transition-colors ${isSelected
                                                                                         ? 'border-blue-600 bg-blue-50'
                                                                                         : isDisabled
-                                                                                          ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
-                                                                                          : 'border-gray-200 bg-white hover:border-gray-300 active:bg-gray-50'
-                                                                                }`}
+                                                                                            ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
+                                                                                            : 'border-gray-200 bg-white hover:border-gray-300 active:bg-gray-50'
+                                                                                    }`}
                                                                             >
                                                                                 <div className="flex items-center gap-3">
                                                                                     {group.selection_type ===
-                                                                                    'single' ? (
+                                                                                        'single' ? (
                                                                                         <div
-                                                                                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                                                                                                isSelected
+                                                                                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${isSelected
                                                                                                     ? 'border-blue-600 bg-blue-600'
                                                                                                     : 'border-gray-400 bg-white'
-                                                                                            }`}
+                                                                                                }`}
                                                                                         >
                                                                                             {isSelected && (
                                                                                                 <div className="h-2 w-2 rounded-full bg-white" />
@@ -525,11 +525,10 @@ return;
                                                                                         </div>
                                                                                     ) : (
                                                                                         <div
-                                                                                            className={`flex h-6 w-6 items-center justify-center rounded border-2 ${
-                                                                                                isSelected
+                                                                                            className={`flex h-6 w-6 items-center justify-center rounded border-2 ${isSelected
                                                                                                     ? 'border-blue-600 bg-blue-600'
                                                                                                     : 'border-gray-400 bg-white'
-                                                                                            }`}
+                                                                                                }`}
                                                                                         >
                                                                                             {isSelected && (
                                                                                                 <svg
@@ -556,7 +555,7 @@ return;
                                                                                     {Number(
                                                                                         modifier.price,
                                                                                     ) >
-                                                                                    0
+                                                                                        0
                                                                                         ? `+ $${Number(modifier.price).toFixed(2)}`
                                                                                         : 'Free'}
                                                                                 </span>

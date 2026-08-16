@@ -156,15 +156,19 @@ class OrderController extends Controller
 
     public function ordering(Request $request)
     {
-        $selectedCat = (array) $request->input('category_id', []);
+        $selectedCat = array_filter((array) $request->input('category_id', []));
 
-        $product = Product::query();
+        $product = Product::query()->where('is_active', true);
 
-        $product->where('is_active', true);
+        if (! empty($selectedCat)) {
+            $childCatIds = Category::whereIn('parent_id', $selectedCat)
+                ->pluck('id')
+                ->toArray();
 
-        $product->when(! empty($selectedCat), function ($query) use ($selectedCat) {
-            $query->whereIn('category_id', $selectedCat);
-        });
+            $allCatIds = array_unique(array_merge($selectedCat, $childCatIds));
+
+            $product->whereIn('category_id', $allCatIds);
+        }
 
         return inertia('order/index', [
             'products' => $product->with([
@@ -175,7 +179,7 @@ class OrderController extends Controller
                     $query->where('is_active', true);
                 },
             ])->paginate(10)->withQueryString(),
-            'categories' => Category::with('parent', 'children')->get(),
+            'categories' => Category::where('is_active', true)->with('parent', 'children')->get(),
         ]);
     }
 }
