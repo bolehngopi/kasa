@@ -287,8 +287,8 @@ export default function Checkout() {
                                 {isCalculating
                                     ? 'Calculating...'
                                     : processing
-                                      ? 'Processing Order...'
-                                      : 'Place Order'}
+                                        ? 'Processing Order...'
+                                        : 'Place Order'}
                             </button>
                         </form>
                     </div>
@@ -336,7 +336,7 @@ export default function Checkout() {
 
                                                     {item.modifiers &&
                                                         item.modifiers.length >
-                                                            0 && (
+                                                        0 && (
                                                             <div className="mt-2 border-l-2 border-gray-300 pl-3">
                                                                 {item.modifiers.map(
                                                                     (mod) => (
@@ -354,18 +354,18 @@ export default function Checkout() {
                                                                                 mod.price,
                                                                             ) >
                                                                                 0 && (
-                                                                                <span className="ml-1 text-gray-400">
-                                                                                    (+
-                                                                                    $
-                                                                                    {Number(
-                                                                                        mod.price,
-                                                                                    ).toFixed(
-                                                                                        2,
-                                                                                    )}
+                                                                                    <span className="ml-1 text-gray-400">
+                                                                                        (+
+                                                                                        $
+                                                                                        {Number(
+                                                                                            mod.price,
+                                                                                        ).toFixed(
+                                                                                            2,
+                                                                                        )}
 
-                                                                                    )
-                                                                                </span>
-                                                                            )}
+                                                                                        )
+                                                                                    </span>
+                                                                                )}
                                                                         </p>
                                                                     ),
                                                                 )}

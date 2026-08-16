@@ -213,7 +213,7 @@ export default function ViewOrder() {
 
                                                         {cartItem.notes &&
                                                             editingIndex !==
-                                                                index && (
+                                                            index && (
                                                                 <div className="mt-2 inline-block rounded border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-sm font-medium text-yellow-800">
                                                                     Note:{' '}
                                                                     {
@@ -236,7 +236,7 @@ export default function ViewOrder() {
                                                                     handleUpdateQuantity(
                                                                         index,
                                                                         cartItem.quantity -
-                                                                            1,
+                                                                        1,
                                                                     )
                                                                 }
                                                                 className="flex h-8 w-8 items-center justify-center rounded font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-900"
@@ -253,7 +253,7 @@ export default function ViewOrder() {
                                                                     handleUpdateQuantity(
                                                                         index,
                                                                         cartItem.quantity +
-                                                                            1,
+                                                                        1,
                                                                     )
                                                                 }
                                                                 className="flex h-8 w-8 items-center justify-center rounded font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-900"
@@ -312,7 +312,7 @@ export default function ViewOrder() {
                                                                 );
                                                                 setNoteText(
                                                                     cartItem.notes ||
-                                                                        '',
+                                                                    '',
                                                                 );
                                                             }}
                                                             className="text-sm font-bold text-blue-600 hover:text-blue-800"
