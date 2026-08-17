@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { getStatusBadge } from '@/lib/utils';
 import { index as indexOrders, update as updateOrder } from '@/routes/orders';
+import { useFormatCurrency } from '@/lib/format';
 import type { Order } from '@/types';
 
 const STATUS_OPTIONS = [
@@ -14,6 +15,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function OrderShow({ order }: { order: Order }) {
+    const formatCurrency = useFormatCurrency();
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState(order.status);
 
@@ -181,11 +183,7 @@ return;
                                                                     }
                                                                 </span>
                                                                 <span>
-                                                                    {Number(
-                                                                        modifier.price,
-                                                                    ).toFixed(
-                                                                        2,
-                                                                    )}
+                                                                    {formatCurrency(modifier.price)}
                                                                 </span>
                                                             </div>
                                                         ),
@@ -208,8 +206,7 @@ return;
                                             Qty: {product.quantity}
                                         </p>
                                         <p className="font-semibold text-gray-900">
-                                            {/* Note: This assumes product.price is the base price before modifiers. Adjust math if needed. */}
-                                            {Number(product.price).toFixed(2)}
+                                            {formatCurrency(product.price)}
                                         </p>
                                     </div>
                                 </div>
@@ -278,23 +275,19 @@ return;
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>Subtotal</span>
                                 <span>
-                                    {Number(order.total_amount).toFixed(2)}
+                                    {formatCurrency(order.total_amount)}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>Discount</span>
                                 <span className="text-red-600">
-                                    -
-                                    {' ' +
-                                        Number(order.discount_amount).toFixed(
-                                            2,
-                                        )}
+                                    -{formatCurrency(order.discount_amount)}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>Tax</span>
                                 <span>
-                                    {Number(order.tax_amount).toFixed(2)}
+                                    {formatCurrency(order.tax_amount)}
                                 </span>
                             </div>
 
@@ -304,7 +297,7 @@ return;
                                         Total
                                     </span>
                                     <span className="text-xl font-bold text-blue-600">
-                                        {Number(order.final_amount).toFixed(2)}
+                                        {formatCurrency(order.final_amount)}
                                     </span>
                                 </div>
                             </div>

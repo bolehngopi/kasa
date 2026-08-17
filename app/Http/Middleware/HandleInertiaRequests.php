@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -44,6 +45,14 @@ class HandleInertiaRequests extends Middleware
                     'permissions' => $request->user()->getAllPermissions()->pluck('name'),
                     'roles' => $request->user()->getRoleNames(),
                 ] : null,
+            ],
+            'settings' => [
+                'currency_locale' => Setting::getValue('currency_locale', 'id-ID'),
+                'currency_code' => Setting::getValue('currency_code', 'IDR'),
+                'currency_symbol' => Setting::getValue('currency_symbol', 'Rp'),
+                'decimal_places' => Setting::getValue('decimal_places', '0'),
+                'tax_percentage' => Setting::getValue('tax_percentage', '11'),
+                'service_charge_percentage' => Setting::getValue('service_charge_percentage', '5'),
             ],
         ];
     }

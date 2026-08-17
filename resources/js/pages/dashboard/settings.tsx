@@ -1,5 +1,6 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { formatCurrency } from '@/lib/format';
 
 interface UserData {
     id: number;
@@ -12,7 +13,10 @@ interface SettingsData {
     store_name: string;
     store_phone: string;
     store_address: string;
+    currency_locale: string;
+    currency_code: string;
     currency_symbol: string;
+    decimal_places: string;
     tax_percentage: string;
     service_charge_percentage: string;
     receipt_header: string;
@@ -49,7 +53,10 @@ export default function Settings({ user, canManageStore, settings }: Props) {
         store_phone: settings?.store_phone || '+62 812-3456-7890',
         store_address:
             settings?.store_address || 'Jl. Sudirman No. 123, Jakarta',
+        currency_locale: settings?.currency_locale || 'id-ID',
+        currency_code: settings?.currency_code || 'IDR',
         currency_symbol: settings?.currency_symbol || 'Rp',
+        decimal_places: settings?.decimal_places ?? '0',
         tax_percentage: settings?.tax_percentage || '11',
         service_charge_percentage: settings?.service_charge_percentage || '5',
         receipt_header:
@@ -57,6 +64,34 @@ export default function Settings({ user, canManageStore, settings }: Props) {
         receipt_footer:
             settings?.receipt_footer || 'Free Wi-Fi: KasaGuest | Pass: kopi123',
     });
+
+    const currencyPresets = [
+        { label: '🇮🇩 Indonesia (IDR - Rp)', locale: 'id-ID', code: 'IDR', symbol: 'Rp', decimals: '0' },
+        { label: '🇺🇸 United States (USD - $)', locale: 'en-US', code: 'USD', symbol: '$', decimals: '2' },
+        { label: '🇪🇺 Eurozone (EUR - €)', locale: 'de-DE', code: 'EUR', symbol: '€', decimals: '2' },
+        { label: '🇬🇧 United Kingdom (GBP - £)', locale: 'en-GB', code: 'GBP', symbol: '£', decimals: '2' },
+        { label: '🇯🇵 Japan (JPY - ¥)', locale: 'ja-JP', code: 'JPY', symbol: '¥', decimals: '0' },
+        { label: '🇸🇬 Singapore (SGD - S$)', locale: 'en-SG', code: 'SGD', symbol: 'S$', decimals: '2' },
+        { label: '🇲🇾 Malaysia (MYR - RM)', locale: 'ms-MY', code: 'MYR', symbol: 'RM', decimals: '2' },
+        { label: '🇦🇺 Australia (AUD - A$)', locale: 'en-AU', code: 'AUD', symbol: 'A$', decimals: '2' },
+        { label: '🇨🇦 Canada (CAD - C$)', locale: 'en-CA', code: 'CAD', symbol: 'C$', decimals: '2' },
+        { label: '🇵🇭 Philippines (PHP - ₱)', locale: 'en-PH', code: 'PHP', symbol: '₱', decimals: '2' },
+        { label: '🇹🇭 Thailand (THB - ฿)', locale: 'th-TH', code: 'THB', symbol: '฿', decimals: '2' },
+    ];
+
+    const applyCurrencyPreset = (presetIndex: string) => {
+        if (presetIndex === '') return;
+        const preset = currencyPresets[Number(presetIndex)];
+        if (preset) {
+            storeForm.setData((prev) => ({
+                ...prev,
+                currency_locale: preset.locale,
+                currency_code: preset.code,
+                currency_symbol: preset.symbol,
+                decimal_places: preset.decimals,
+            }));
+        }
+    };
 
     const handleProfileSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -596,50 +631,141 @@ export default function Settings({ user, canManageStore, settings }: Props) {
                                 <div className="space-y-5">
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900">
-                                            Financial & Tax Rates
+                                            Financial & Currency Localization
                                         </h3>
                                         <p className="text-xs text-gray-500">
-                                            Configure regional currency and
-                                            checkout surcharge metrics.
+                                            Configure currency formatting standards using native Intl locale rules and checkout tax metrics.
                                         </p>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label
-                                                htmlFor="currency_symbol"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Currency Symbol{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
-                                            </label>
-                                            <input
-                                                id="currency_symbol"
-                                                type="text"
-                                                value={
-                                                    storeForm.data
-                                                        .currency_symbol
-                                                }
-                                                onChange={(e) =>
-                                                    storeForm.setData(
-                                                        'currency_symbol',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none sm:w-40"
-                                                placeholder="e.g. Rp or $"
-                                            />
-                                            {storeForm.errors
-                                                .currency_symbol && (
-                                                <p className="mt-1 text-xs text-red-600">
-                                                    {
-                                                        storeForm.errors
-                                                            .currency_symbol
-                                                    }
+                                    {/* Live Formatting Preview */}
+                                    <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 shadow-sm">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-900">
+                                                    Live Formatting Preview
+                                                </h4>
+                                                <p className="mt-0.5 text-xs text-blue-700">
+                                                    Real-time price output across POS, checkout & invoices:
                                                 </p>
-                                            )}
+                                            </div>
+                                            <span className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-mono font-bold text-white shadow-xs">
+                                                {storeForm.data.currency_code || 'IDR'} ({storeForm.data.currency_locale || 'id-ID'})
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="rounded-lg bg-white p-3 border border-blue-100 shadow-xs">
+                                                <span className="block text-[11px] font-medium text-gray-500">Sample Order Subtotal</span>
+                                                <span className="text-lg font-black text-blue-700">
+                                                    {formatCurrency(250000.5, storeForm.data)}
+                                                </span>
+                                            </div>
+                                            <div className="rounded-lg bg-white p-3 border border-blue-100 shadow-xs">
+                                                <span className="block text-[11px] font-medium text-gray-500">Sample Product Price</span>
+                                                <span className="text-lg font-black text-gray-900">
+                                                    {formatCurrency(45, storeForm.data)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {/* Country & Currency Presets */}
+                                        <div>
+                                            <label htmlFor="currency_preset" className="block text-sm font-medium text-gray-700">
+                                                Quick Currency Presets
+                                            </label>
+                                            <select
+                                                id="currency_preset"
+                                                defaultValue=""
+                                                onChange={(e) => applyCurrencyPreset(e.target.value)}
+                                                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            >
+                                                <option value="" disabled>-- Select a Preset to Auto-Fill Settings --</option>
+                                                {currencyPresets.map((preset, idx) => (
+                                                    <option key={idx} value={idx}>
+                                                        {preset.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <p className="mt-1 text-[11px] text-gray-500">
+                                                Selecting a preset will populate standard locale, ISO currency code, symbol, and decimals below.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label htmlFor="currency_locale" className="block text-sm font-medium text-gray-700">
+                                                    Locale Tag (BCP 47) <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="currency_locale"
+                                                    type="text"
+                                                    value={storeForm.data.currency_locale}
+                                                    onChange={(e) => storeForm.setData('currency_locale', e.target.value)}
+                                                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                                    placeholder="e.g. id-ID, en-US, de-DE"
+                                                />
+                                                {storeForm.errors.currency_locale && (
+                                                    <p className="mt-1 text-xs text-red-600">{storeForm.errors.currency_locale}</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="currency_code" className="block text-sm font-medium text-gray-700">
+                                                    ISO Currency Code <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="currency_code"
+                                                    type="text"
+                                                    value={storeForm.data.currency_code}
+                                                    onChange={(e) => storeForm.setData('currency_code', e.target.value.toUpperCase())}
+                                                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                                    placeholder="e.g. IDR, USD, EUR, GBP"
+                                                />
+                                                {storeForm.errors.currency_code && (
+                                                    <p className="mt-1 text-xs text-red-600">{storeForm.errors.currency_code}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label htmlFor="currency_symbol" className="block text-sm font-medium text-gray-700">
+                                                    Currency Symbol <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    id="currency_symbol"
+                                                    type="text"
+                                                    value={storeForm.data.currency_symbol}
+                                                    onChange={(e) => storeForm.setData('currency_symbol', e.target.value)}
+                                                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                                    placeholder="e.g. Rp, $, €, £"
+                                                />
+                                                {storeForm.errors.currency_symbol && (
+                                                    <p className="mt-1 text-xs text-red-600">{storeForm.errors.currency_symbol}</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="decimal_places" className="block text-sm font-medium text-gray-700">
+                                                    Decimal Places <span className="text-red-500">*</span>
+                                                </label>
+                                                <select
+                                                    id="decimal_places"
+                                                    value={storeForm.data.decimal_places}
+                                                    onChange={(e) => storeForm.setData('decimal_places', e.target.value)}
+                                                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                                >
+                                                    <option value="0">0 Decimals (e.g. Rp 10.000 / ¥1,000)</option>
+                                                    <option value="1">1 Decimal (e.g. $10.0)</option>
+                                                    <option value="2">2 Decimals (e.g. $10.00 / 10,00 €)</option>
+                                                    <option value="3">3 Decimals (e.g. 10.000 KWD)</option>
+                                                </select>
+                                                {storeForm.errors.decimal_places && (
+                                                    <p className="mt-1 text-xs text-red-600">{storeForm.errors.decimal_places}</p>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

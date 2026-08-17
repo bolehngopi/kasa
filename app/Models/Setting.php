@@ -35,4 +35,25 @@ class Setting extends Model
     {
         static::updateOrCreate(['key' => $key], ['value' => $value]);
     }
+
+    public static function formatCurrency(float|int|string $amount): string
+    {
+        $locale = static::getValue('currency_locale', 'id-ID');
+        $currency = static::getValue('currency_code', 'IDR');
+        $decimals = (int) static::getValue('decimal_places', '0');
+
+        if (class_exists(\NumberFormatter::class)) {
+            $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+            $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $decimals);
+            $formatted = $formatter->formatCurrency((float) $amount, $currency);
+
+            if ($formatted !== false) {
+                return $formatted;
+            }
+        }
+
+        $symbol = static::getValue('currency_symbol', 'Rp');
+
+        return $symbol.' '.number_format((float) $amount, $decimals);
+    }
 }

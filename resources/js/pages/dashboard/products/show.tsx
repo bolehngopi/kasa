@@ -1,9 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
 import { getStockBadge } from '@/lib/utils';
 import { edit } from '@/routes/products';
+import { useFormatCurrency } from '@/lib/format';
 import type { Product } from '@/types';
 
 export default function ProductDetail({ product }: { product: Product }) {
+    const formatCurrency = useFormatCurrency();
     return (
         <>
             <Head title={product.name} />
@@ -129,7 +131,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                                                                     {Number(
                                                                         modifier.price,
                                                                     ) > 0
-                                                                        ? `+$${Number(modifier.price).toFixed(2)}`
+                                                                        ? `+${formatCurrency(modifier.price)}`
                                                                         : 'Free'}
                                                                 </span>
                                                             </div>
@@ -162,7 +164,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                                     Base Price
                                 </p>
                                 <p className="text-3xl font-bold text-gray-900">
-                                    ${Number(product.price).toFixed(2)}
+                                    {formatCurrency(product.price)}
                                 </p>
                             </div>
                             <hr className="border-gray-100" />

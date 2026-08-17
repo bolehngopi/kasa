@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { show as showOrder } from '@/routes/orders';
+import { useFormatCurrency } from '@/lib/format';
 import type { Order, PaginatedOrder } from '@/types';
 
 const getStatusBadge = (status: string) => {
@@ -18,6 +19,7 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
+    const formatCurrency = useFormatCurrency();
     return (
         <>
             <Head title="Orders Management" />
@@ -98,11 +100,7 @@ export default function OrderDashboard({ orders }: { orders: PaginatedOrder }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
-                                            {/* Assuming currency formatting */}
-                                            $
-                                            {Number(order.total_amount).toFixed(
-                                                2,
-                                            )}
+                                            {formatCurrency(order.total_amount)}
                                         </td>
                                         <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                                             {new Date(

@@ -5,6 +5,7 @@ import { calculateTotal } from '@/routes/order';
 import type { CartItem, CalculateTotalResponse } from '@/store/cart-store';
 import { useCart } from '@/store/cart-store';
 import { useOrderStore } from '@/store/order-store';
+import { useFormatCurrency } from '@/lib/format';
 
 interface CheckoutData {
     customer_name: string;
@@ -30,6 +31,7 @@ export default function Checkout() {
     const { items, clear } = useCart();
     const { addOrder } = useOrderStore();
     const { auth } = usePage().props as { auth?: { user?: any } };
+    const formatCurrency = useFormatCurrency();
     const [calc, setCalc] = useState<CalculateTotalResponse | null>(null);
     const [isCalculating, setIsCalculating] = useState<boolean>(
         items.length > 0,
@@ -129,12 +131,6 @@ export default function Checkout() {
                             Checkout
                         </h1>
                     </div>
-                    <Link
-                        href="/invoice"
-                        className="text-sm font-bold text-blue-600 hover:underline"
-                    >
-                        📋 Order History
-                    </Link>
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -356,13 +352,9 @@ export default function Checkout() {
                                                                                 0 && (
                                                                                     <span className="ml-1 text-gray-400">
                                                                                         (+
-                                                                                        $
-                                                                                        {Number(
+                                                                                        {formatCurrency(
                                                                                             mod.price,
-                                                                                        ).toFixed(
-                                                                                            2,
                                                                                         )}
-
                                                                                         )
                                                                                     </span>
                                                                                 )}
@@ -373,10 +365,7 @@ export default function Checkout() {
                                                         )}
                                                 </div>
                                                 <p className="font-medium text-gray-900">
-                                                    $
-                                                    {Number(lineTotal).toFixed(
-                                                        2,
-                                                    )}
+                                                    {formatCurrency(lineTotal)}
                                                 </p>
                                             </div>
                                         );
@@ -416,10 +405,7 @@ export default function Checkout() {
                                 <div className="flex justify-between text-lg font-bold text-gray-900">
                                     <span>Total to Pay</span>
                                     <span>
-                                        $
-                                        {calc?.subtotal
-                                            ? Number(calc.subtotal).toFixed(2)
-                                            : '0.00'}
+                                        {formatCurrency(calc?.subtotal ?? 0)}
                                     </span>
                                 </div>
                                 <p className="text-right text-sm text-gray-500">

@@ -8,6 +8,7 @@ import type {
     ModifierGroup,
     Product,
 } from '@/types';
+import { useFormatCurrency } from '@/lib/format';
 
 interface CategoryWithProducts extends Category {
     id: number | string;
@@ -20,6 +21,7 @@ interface OrderingProps {
 
 export default function Order({ categories }: OrderingProps) {
     const { items, add: addToCart } = useCart();
+    const formatCurrency = useFormatCurrency();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
         null,
     );
@@ -335,7 +337,7 @@ export default function Order({ categories }: OrderingProps) {
                                             {product.name}
                                         </h3>
                                         <p className="mt-2 text-base font-black text-blue-700">
-                                            ${Number(product.price).toFixed(2)}
+                                            {formatCurrency(product.price)}
                                         </p>
                                     </div>
                                 </button>
@@ -386,7 +388,7 @@ export default function Order({ categories }: OrderingProps) {
                                             : 'Add'}
                                 </span>
                                 <span className="text-xl">
-                                    ${currentItemTotal.toFixed(2)}
+                                    {formatCurrency(currentItemTotal)}
                                 </span>
                             </button>
                         </div>
@@ -627,7 +629,7 @@ export default function Order({ categories }: OrderingProps) {
                                                                                         modifier.price,
                                                                                     ) >
                                                                                         0
-                                                                                        ? `+ $${Number(modifier.price).toFixed(2)}`
+                                                                                        ? `+ ${formatCurrency(modifier.price)}`
                                                                                         : 'Free'}
                                                                                 </span>
                                                                             </button>

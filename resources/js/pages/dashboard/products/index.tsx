@@ -1,9 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { edit, index, show } from '@/routes/products';
+import { useFormatCurrency } from '@/lib/format';
 import type { PaginatedProduct, Product } from '@/types';
 
 export default function Products({ products }: { products: PaginatedProduct }) {
+    const formatCurrency = useFormatCurrency();
     const [search, setSearch] = useState(
         () => new URLSearchParams(window.location.search).get('search') || '',
     );
@@ -172,7 +174,7 @@ export default function Products({ products }: { products: PaginatedProduct }) {
                                             {product.sku}
                                         </td>
                                         <td className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
-                                            ${Number(product.price).toFixed(2)}
+                                            {formatCurrency(product.price)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { checkout } from '@/routes';
 import { calculateTotal } from '@/routes/order';
 import { useCart } from '@/store/cart-store';
+import { useFormatCurrency } from '@/lib/format';
 import type {
     CartItem,
     BackendModifier,
@@ -31,6 +32,7 @@ function mapCartItemsToPayload(items: CartItem[]) {
 
 export default function ViewOrder() {
     const { items, set, remove } = useCart();
+    const formatCurrency = useFormatCurrency();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [calc, setCalc] = useState<CalculateTotalResponse | null>(null);
@@ -226,7 +228,7 @@ export default function ViewOrder() {
                                                     <div className="flex shrink-0 flex-col items-end gap-3">
                                                         <span className="text-xl font-black text-blue-700">
                                                             {calculatedItem
-                                                                ? `$${(calculatedItem.line_total ?? Number((calculatedItem.unit_price ?? calculatedItem.price) || 0) * cartItem.quantity).toFixed(2)}`
+                                                                ? formatCurrency(calculatedItem.line_total ?? Number((calculatedItem.unit_price ?? calculatedItem.price) || 0) * cartItem.quantity)
                                                                 : '...'}
                                                         </span>
 
@@ -347,7 +349,7 @@ export default function ViewOrder() {
                                 </span>
                                 <span className="text-3xl font-black text-gray-900">
                                     {calc
-                                        ? `$${Number(calc.subtotal).toFixed(2)}`
+                                        ? formatCurrency(calc.subtotal)
                                         : '...'}
                                 </span>
                             </div>

@@ -2,11 +2,13 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { getStatusBadge } from '@/lib/utils';
 import { useOrderStore } from '@/store/order-store';
+import { useFormatCurrency } from '@/lib/format';
 import type { Order } from '@/types';
 
 export default function InvoiceShow({ order }: { order: Order }) {
     const { auth } = usePage().props as { auth?: { user?: any } };
     const { addOrder } = useOrderStore();
+    const formatCurrency = useFormatCurrency();
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -160,7 +162,7 @@ export default function InvoiceShow({ order }: { order: Order }) {
                                                                                 modifier.price,
                                                                             ) >
                                                                             0
-                                                                                ? `$${Number(modifier.price).toFixed(2)}`
+                                                                                ? formatCurrency(modifier.price)
                                                                                 : 'Free'}
                                                                         </span>
                                                                     </div>
@@ -198,16 +200,10 @@ export default function InvoiceShow({ order }: { order: Order }) {
                                                 return (
                                                     <div className="shrink-0 text-right">
                                                         <p className="text-xs text-gray-500">
-                                                            Price: $
-                                                            {unitPrice.toFixed(
-                                                                2,
-                                                            )}
+                                                            Price: {formatCurrency(unitPrice)}
                                                         </p>
                                                         <p className="mt-0.5 text-base font-black text-gray-900">
-                                                            $
-                                                            {lineTotal.toFixed(
-                                                                2,
-                                                            )}
+                                                            {formatCurrency(lineTotal)}
                                                         </p>
                                                     </div>
                                                 );
@@ -283,29 +279,20 @@ export default function InvoiceShow({ order }: { order: Order }) {
                                     <div className="flex justify-between">
                                         <span>Subtotal</span>
                                         <span className="font-medium text-gray-900">
-                                            $
-                                            {Number(order.total_amount).toFixed(
-                                                2,
-                                            )}
+                                            {formatCurrency(order.total_amount)}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Tax</span>
                                         <span className="font-medium text-gray-900">
-                                            $
-                                            {Number(
-                                                order.tax_amount || 0,
-                                            ).toFixed(2)}
+                                            {formatCurrency(order.tax_amount || 0)}
                                         </span>
                                     </div>
                                     {Number(order.discount_amount || 0) > 0 && (
                                         <div className="flex justify-between font-medium text-emerald-600">
                                             <span>Discount</span>
                                             <span>
-                                                -$
-                                                {Number(
-                                                    order.discount_amount,
-                                                ).toFixed(2)}
+                                                -{formatCurrency(order.discount_amount)}
                                             </span>
                                         </div>
                                     )}
@@ -316,10 +303,7 @@ export default function InvoiceShow({ order }: { order: Order }) {
                                                 Total Amount
                                             </span>
                                             <span className="text-2xl font-black text-blue-600">
-                                                $
-                                                {Number(
-                                                    order.final_amount,
-                                                ).toFixed(2)}
+                                                {formatCurrency(order.final_amount)}
                                             </span>
                                         </div>
                                     </div>

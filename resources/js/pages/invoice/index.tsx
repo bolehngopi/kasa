@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { getGuestOrders } from '@/routes/invoice';
 import { useOrderStore } from '@/store/order-store';
+import { useFormatCurrency } from '@/lib/format';
 import type { Order } from '@/types';
 
 export default function InvoiceList({
@@ -11,6 +12,7 @@ export default function InvoiceList({
 }) {
     const { auth } = usePage().props as { auth?: { user?: any } };
     const isGuest = !auth?.user;
+    const formatCurrency = useFormatCurrency();
 
     const { orderNumbers, removeOrder } = useOrderStore();
     const [guestOrders, setGuestOrders] = useState<Order[]>([]);
@@ -216,10 +218,7 @@ export default function InvoiceList({
                                                 <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-3 sm:border-t-0 sm:pt-0">
                                                     <div className="text-left sm:text-right">
                                                         <span className="block text-2xl font-black text-blue-600">
-                                                            $
-                                                            {Number(
-                                                                order.final_amount,
-                                                            ).toFixed(2)}
+                                                            {formatCurrency(order.final_amount)}
                                                         </span>
                                                     </div>
 
